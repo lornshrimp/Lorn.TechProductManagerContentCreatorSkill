@@ -184,7 +184,7 @@ user-invocable: true
 
 ---
 
-#### 模板四：深度分析体（6 段 / 2000-3000 字）
+#### 模板四：深度分析体（6 段 / 2500-3500 字）
 
 **绑定写作公式：SCQA**
 > Situation（情境）→ Complication（冲突）→ Question（问题）→ Answer（答案）
