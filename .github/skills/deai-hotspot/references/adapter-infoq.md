@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.infoq.cn/hotlist?tag=day`（热点列表页，支持时间切换）
 - 类型：InfoQ 中国热点
-- 状态：✅ 验证可用
+- 状态：✅ **可用（bsk 浏览器）**。2026-08-08 实测：urllib 直连返回空（JS 渲染），但 **bsk navigate + 滚动触发懒加载 + evaluate 可正常采集**（当日热点含哈萨比斯卸任/Jeff Dean/GPT-5.6 降价）；WebSearch 仅作最后兜底
 
 ## 数据特征
 

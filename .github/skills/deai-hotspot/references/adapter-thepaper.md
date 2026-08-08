@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.thepaper.cn/`（热榜嵌入首页 HTML）
 - 类型：澎湃新闻热榜
-- 状态：✅ 验证可用
+- 状态：✅ **可用（bsk evaluate 实测）**。2026-08-08 验证：hotList 路径已改版返回"内容不存在"，但**首页热榜嵌入 HTML 可正常采集**（bsk evaluate 提取链接与标题）；urllib 直连受 WAF 影响，统一走 bsk
 
 ## 数据特征
 

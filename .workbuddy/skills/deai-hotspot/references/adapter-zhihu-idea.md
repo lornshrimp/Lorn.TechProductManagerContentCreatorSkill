@@ -3,9 +3,14 @@
 ## 页面信息
 - URL：`https://www.zhihu.com/creator/creative-inspiration/idea-topics`
 - 类型：知乎想法话题
-- 状态：❌ **不可用**（内容为前端动态渲染，无法提取结构化数据）
+- 状态：✅ **可用（bsk 登录态 evaluate 实测）**。2026-08-08 验证：登录态下 bsk evaluate `document.body.innerText` 可提取话题名+参与人数（瀑布流内容已渲染）；历史"前端动态渲染不可提取"记录已过时
 
-## 问题描述
+## 注意事项（更新）
+- 需登录态（创作中心页面）
+- 参与度显著低于问题热榜（多为数千人级），适合话题营销/轻量内容，不适合深度选题
+- 想法热榜（/pin/hot）仍确认失效（返回 422 Unprocessable Entity），勿混淆
+
+## 历史问题描述（已过时）
 该页面加载后，主内容区域为 JavaScript 动态渲染的瀑布流布局。a11y 快照（read_page）和 Playwright `page.evaluate()` 均无法从 DOM 中提取结构化的"话题名称、讨论热度、参与人数"列表。
 
 ## 已知尝试（记录避免重复）

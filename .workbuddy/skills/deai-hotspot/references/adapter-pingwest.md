@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.pingwest.com/`（首页，一周精选模块）
 - 类型：品玩一周精选
-- 状态：✅ 验证可用
+- 状态：✅ **可用（bsk 浏览器）**。2026-08-08 实测：urllib 直连返回空（JS 渲染），但 **bsk navigate + evaluate（提取 `pingwest.com/a/` 链接）可正常采集**（实时精选含字节不蒸馏/实测 Qwen3.8-Max）；WebSearch 仅作最后兜底
 
 ## 数据特征
 

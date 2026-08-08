@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.douyin.com/hot`
 - 类型：抖音热点
-- 状态：⚠️ **降级可用**（a11y 快照截断，需用 Playwright 或搜索引擎）
+- 状态：✅ **可用（bsk evaluate）**。2026-08-08 实测：navigate 会 RPC 超时（页面实际已就绪），**evaluate 可完整提取热榜主体含热度值**（18 条+）；a11y 快照截断的历史问题用 evaluate 绕开
 
 ## 操作步骤
 

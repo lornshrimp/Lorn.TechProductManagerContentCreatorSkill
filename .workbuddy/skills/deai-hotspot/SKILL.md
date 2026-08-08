@@ -19,11 +19,22 @@ user-invocable: true
 
 ## Procedure
 
+### 0. 采集通道优先级（bsk 优先，2026-08-07 定版）
+
+按以下优先级选择采集通道，前序不可用时逐级降级：
+
+1. **bsk 浏览器（首选）**：驱动用户真实 Edge/Chrome（BrowserSkill 扩展），可读 **JS 渲染 + 登录态**页面（知乎/微博/抖音/B站等此前不可达源）。依赖：`bsk` CLI（`~/.local/bin/bsk.exe`）+ 浏览器扩展已连接。前置自检：`bsk doctor -v`（全部 ok）、`bsk browsers`（有已连接浏览器）。**详细命令手册见 `./references/adapter-bsk.md`**。
+2. **Python urllib 直连**：SSR 静态源（百度/IT之家/网易/澎湃/品玩）快速通道；`open('wb')` 落盘 `%TEMP%`（curl -o 在本环境会被拦截，勿用）。
+3. **WebSearch + 聚合站**：兜底（JS 源且无登录态时），参考 `rebang.today` / `hotdata.aipromptnav.com` / `tophub.app` 取快照。
+
+**bsk 会话生命周期（强制）**：`bsk session start` → 所有命令带 `--session <id>` → 任务结束（含出错路径）必须 `bsk session stop <id>`。
+
 ### 1. 确定采集来源
 用户可指定，默认全量。支持来源：
 
 | 来源 | 适配器文件 |
 |------|-----------|
+| **bsk 采集手册** | `./references/adapter-bsk.md` |
 | 微博热搜榜 | `./references/adapter-weibo.md` |
 | 百度热搜榜 | `./references/adapter-baidu.md` |
 | 知乎问题热榜 | `./references/adapter-zhihu-q.md` |

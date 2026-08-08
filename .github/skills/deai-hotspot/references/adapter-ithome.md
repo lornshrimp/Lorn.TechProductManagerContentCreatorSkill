@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.ithome.com/`（热榜嵌入首页 HTML）
 - 类型：IT之家热榜（日榜 / 周榜 / 月榜）
-- 状态：✅ 验证可用
+- 状态：✅ **可用（bsk evaluate 实测）**。2026-08-08 验证：/rank 路径已 404（改版），但**首页文章流可正常采集**（bsk evaluate 提取 `ithome.com/0/` 文章链接与标题）；勿用 rank 路径
 
 ## 数据特征
 

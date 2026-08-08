@@ -3,7 +3,7 @@
 ## 页面信息
 - URL：`https://www.toutiao.com/?channel=hot&source=ch`（频道页，降级方案）
 - 类型：头条热榜
-- 状态：⚠️ **降级可用**（独立热榜页面已下线）
+- 状态：✅ **可用（bsk evaluate 实测频道页）**。2026-08-08 验证：/hot 等独立热榜页 404（已下线），但**热点频道页 `?channel=hot` 可正常采集**（bsk evaluate 提取词条+热门文章，16 条）；走 bsk，勿用 urllib
 
 ## 已知不可用的 URL（记录避免重复尝试）
 - `https://www.toutiao.com/hot-event/` — 返回 404，已下线
