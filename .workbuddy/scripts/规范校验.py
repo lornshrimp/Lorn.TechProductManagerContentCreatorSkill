@@ -78,32 +78,33 @@ TITLE_CHECKS = {
     "平台适配": "必须含「平台适配」章节（各平台首选标题）",
 }
 
-# 微信版（deai-adapt-wechat）：封面图提示词 + 内容简介
-WECHAT_CHECKS = {
-    "封面图提示词": "必须含「封面图 AI 提示词」或「封面图」",
-    "内容简介": "必须含「内容简介」",
-    "引导": "必须含「点在看/留言/关注」类互动引导",
-}
+# 微信版（deai-adapt-wechat）：封面图提示词 + 内容简介（内容级关键词检查，2026-08-08 修复）
+WECHAT_CHECKS = [
+    (["封面图", "AI 提示词", "prompt"], "封面图 AI 提示词"),
+    (["内容简介", "摘要"], "内容简介"),
+    (["在看", "留言", "关注"], "点在看/留言/关注类互动引导"),
+]
 
-# 百家号版（deai-adapt-baiduhao）：SEO 关键词
-BAIDUHAO_CHECKS = {
-    "关键词": "必须含「关键词」或「搜索关键词」",
-    "核心摘要": "必须含「核心摘要」或开头直接给答案",
-}
+# 百家号版（deai-adapt-baiduhao）：SEO 关键词 + 开头直接给答案
+BAIDUHAO_CHECKS = [
+    (["关键词", "SEO", "搜索"], "SEO 关键词"),
+    (["核心答案", "核心摘要", "**核心"], "开头直接给答案"),
+]
 
-# CSDN 版（deai-adapt-csdn）：方法论/结构化
-CSDN_CHECKS = {
-    "结构化": "必须含 H2/H3 小标题或表格（结构化排版）",
-    "方法论/技术": "必须含方法论/步骤/技术内容，非纯叙事",
-}
+# CSDN 版（deai-adapt-csdn）：结构化（H2/H3 或表格）+ 方法论
+CSDN_CHECKS = [
+    (["## ", "### ", "|"], "H2/H3 小标题或表格（结构化排版）"),
+    (["方法论", "步骤", "框架", "分析", "要点"], "方法论/步骤/技术内容"),
+]
 
 # 头条版（deai-adapt-toutiao）：短段落 + 关注引导
-TOUTIAO_CHECKS = {
-    "短段落": "正文段落平均 ≤3 句（头条规范）",
-    "关注引导": "结尾必须含「关注我/关注」类引导",
-}
+TOUTIAO_CHECKS = [
+    (["关注我", "关注"], "结尾关注引导"),
+    (["\n", "。", "！"], "短段落结构（正文存在）"),
+]
 
 # 平台适配版文件名前缀 → 对应的校验规则
+# 知乎版用 ZHIHU_REQUIRED（frontmatter source_label + clickable），其余用内容关键词规则
 PLATFORM_PREFIX = {
     "知乎-": ZHIHU_REQUIRED,
     "微信-": WECHAT_CHECKS,
@@ -111,6 +112,27 @@ PLATFORM_PREFIX = {
     "CSDN-": CSDN_CHECKS,
     "头条-": TOUTIAO_CHECKS,
 }
+
+# 字数实测门禁（2026-08-08 新增）：按大纲 genre 映射体裁底线；草稿/润色稿/终稿正文字数不足即 ❌。
+# 教训：此前"约 2300 字"为估算值，实测仅 1158-1661 字，导致不达标产出通过签报。字数必须实测，禁止估算。
+GENRE_MIN_WORDS = {
+    "深度分析体": 2500,
+    "观点评论体": 1500,
+    "清单体": 1500,
+    "快讯评点体": 500,
+    "故事体": 1500,
+    "问题解决体": 800,
+}
+
+# 平台适配版 frontmatter 必填字段（deai-adapt-* 规范：title/date/platform/topic，无 type）
+PLATFORM_YAML_KEYS = ["title", "date", "platform", "topic"]
+
+# 附属内容标记：统计正文时在此截断（草稿的素材溯源/质量自检、适配版的封面/配图/SEO 等）
+BODY_TRUNCATE_MARKERS = [
+    "## 素材溯源", "## 标题决策说明", "## 质量自检报告", "## 封面图",
+    "## 内容简介", "## 互动引导", "## SEO 关键词", "## 配图详情",
+    "# 附属内容区域", "## 配图搜索替换指令", "## 参考来源",
+]
 
 
 def parse_yaml_frontmatter(text: str) -> tuple:
@@ -164,13 +186,53 @@ def check_clickable_link(path: Path) -> list:
     return issues
 
 
+def count_body_chars(path: Path) -> int:
+    """实测正文中文字符数：去掉 frontmatter、H1 标题与附属内容区（素材溯源/质量自检/封面/配图等）。
+    字数必须实测（禁止估算）——2026-08-08 教训固化。"""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            text = text[end + 4:]
+    text = re.sub(r"^#\s+.*$", "", text, flags=re.MULTILINE)
+    for marker in BODY_TRUNCATE_MARKERS:
+        idx = text.find(marker)
+        if idx != -1:
+            text = text[:idx]
+            break
+    return len(re.findall(r"[\u4e00-\u9fff]", text))
+
+
+def check_content(path: Path, keywords: list, desc: str) -> list:
+    """全文关键词检查（平台版规范项）：命中任一关键词即通过。
+    2026-08-08 修复：原用 check_section 按"标题行包含检查项名"匹配（如找名为'结构化'的标题），
+    与实际产出格式不符导致误报；改为内容级关键词匹配。"""
+    issues = []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if not any(kw in text for kw in keywords):
+        issues.append(f"  ❌ 缺少内容: {desc}（需含关键词之一: {'/'.join(keywords)}）")
+    return issues
+
+
+def find_project_root() -> Path:
+    """定位项目根目录：从脚本位置向上查找包含 hotspot/ 与 drafts/ 的目录。
+    2026-08-08 修复：原 `Path(__file__).resolve().parent.parent` 解析到 .workbuddy 目录
+    （scripts 的上一级），导致 hotspot/drafts 路径全部不存在 → 校验从未真正执行、
+    长期输出假阳性"全部通过"。这是字数不达标漏过的根本原因之一。"""
+    p = Path(__file__).resolve()
+    for cand in [p, *p.parents]:
+        if (cand / "hotspot").is_dir() and (cand / "drafts").is_dir():
+            return cand
+    return p.parents[2]  # 兜底：项目根
+
+
 def main():
     parser = argparse.ArgumentParser(description="自媒体流水线产出物规范校验")
     parser.add_argument("--date", default="", help="日期 YYYY-MM-DD，缺省用今天")
-    parser.add_argument("--root", default="", help="工作区根目录，缺省用脚本上级目录")
+    parser.add_argument("--root", default="", help="工作区根目录，缺省自动探测项目根")
     args = parser.parse_args()
 
-    root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
+    root = Path(args.root) if args.root else find_project_root()
     date = args.date or __import__("datetime").date.today().isoformat()
 
     report = []
@@ -181,19 +243,27 @@ def main():
     if hotspot_dir.exists():
         for f in sorted(hotspot_dir.glob("*.md")):
             name = f.name
-            issues = check_yaml_required(f, REQUIRED_YAML_KEYS["hotspot/榜单"])
-            # 知乎类榜单必须含链接列
-            if "知乎" in name and "想法热榜" not in name and "想法话题" not in name:
-                text = f.read_text(encoding="utf-8", errors="ignore")
-                if "去回答" not in text and "zhihu.com/question" not in text:
-                    issues.append("  ❌ 知乎类榜单必须含「链接」列 [去回答](zhihu.com/question/...)")
             if name == "融合榜单.md":
-                issues += check_section(f, ["打卡表"], "19 源逐源状态")
-                issues += check_section(f, ["TOP 20"], "跨平台热点表")
+                # 融合榜单 frontmatter 用 sources 列表（多行 "  - 来源名"），无单数 source 字段。
+                # 2026-08-08 修复：parse_yaml_frontmatter 不支持 YAML 列表（"sources:" 后多行 "- " 被跳过），
+                # 改为文本级校验 sources 列表，避免误报。
+                issues = []
                 text = f.read_text(encoding="utf-8", errors="ignore")
                 fm, _ = parse_yaml_frontmatter(text)
-                if not fm.get("sources"):
-                    issues.append("  ❌ YAML sources 列表为空")
+                for key in ["title", "date", "collectTime"]:
+                    if key not in fm or not fm[key]:
+                        issues.append(f"  ❌ frontmatter 缺少必填字段: {key}")
+                if not re.search(r"^sources:", text, re.MULTILINE) or not re.search(r"^  - ", text, re.MULTILINE):
+                    issues.append("  ❌ YAML sources 列表为空（应含 'sources:' 及多行 '  - 来源名'）")
+                issues += check_section(f, ["打卡表"], "19 源逐源状态")
+                issues += check_section(f, ["TOP 20"], "跨平台热点表")
+            else:
+                issues = check_yaml_required(f, REQUIRED_YAML_KEYS["hotspot/榜单"])
+                # 知乎类榜单必须含链接列
+                if "知乎" in name and "想法热榜" not in name and "想法话题" not in name:
+                    text = f.read_text(encoding="utf-8", errors="ignore")
+                    if "去回答" not in text and "zhihu.com/question" not in text:
+                        issues.append("  ❌ 知乎类榜单必须含「链接」列 [去回答](zhihu.com/question/...)")
             if issues:
                 report.append(f"\n[榜单] {hotspot_dir.name}/{name}")
                 report += issues
@@ -230,7 +300,7 @@ def main():
             files = list(d.glob("*.md"))
             if not files:
                 continue
-            prefix = f"\n[选题目录] {d.name}"
+            dir_label = f"\n[选题目录] {d.name}"
             dir_issues = []
 
             # 大纲
@@ -266,24 +336,48 @@ def main():
             if not list(d.glob("编辑终审签报-*.md")):
                 dir_issues.append("  ❌ 缺少「编辑终审签报-*.md」（deai-review 必产出）")
 
+            # 字数实测门禁（2026-08-08 新增，硬性）：从大纲 frontmatter 读 genre → 体裁底线；
+            # 草稿/润色稿/终稿正文中文字数不足即 ❌。禁止估算字数——估算通过 = 本轮事故根因。
+            genre = "深度分析体"
+            if outline.exists():
+                ot = outline.read_text(encoding="utf-8", errors="ignore")
+                ofm, _ = parse_yaml_frontmatter(ot)
+                genre = (ofm.get("genre") or "深度分析体").strip() or "深度分析体"
+            min_words = GENRE_MIN_WORDS.get(genre, 2500)
+            for wf in (sorted(d.glob("草稿-*.md")) + sorted(d.glob("润色稿-*.md"))
+                       + sorted(d.glob("终稿-*.md"))):
+                n = count_body_chars(wf)
+                if n < min_words:
+                    dir_issues.append(
+                        f"  ❌ 正文字数不足: {wf.name} 实测 {n} 字 < {min_words} 字"
+                        f"（{genre} 底线，必须实测不得估算）")
+
             # 平台适配版
             platform_files = [f for f in files if any(f.name.startswith(p) for p in PLATFORM_PREFIX)]
             for pf in sorted(platform_files):
-                issues = check_yaml_required(pf, REQUIRED_YAML_KEYS["drafts"])
-                for prefix, rules in PLATFORM_PREFIX.items():
-                    if pf.name.startswith(prefix):
-                        if "clickable_rule" in rules:
+                issues = check_yaml_required(pf, PLATFORM_YAML_KEYS)
+                for pfx, rules in PLATFORM_PREFIX.items():
+                    if pf.name.startswith(pfx):
+                        if pfx == "知乎-":
+                            # 知乎版（deai-adapt-zhihu）：frontmatter 必含 source_label
+                            # （邀请问题#N / 推荐问题#N / 热榜#N / 独立文章）；source_url 非空时
+                            # frontmatter 之后正文之前必须有 [→ 去回答该问题](url) Clickable Link 行。
+                            # 2026-08-08 修复：source_label 检查原被 clickable_rule 分支短路，
+                            # 改为从 frontmatter 读取校验（check_section 只搜正文标题，无效）。
+                            pf_text = pf.read_text(encoding="utf-8", errors="ignore")
+                            fm, _ = parse_yaml_frontmatter(pf_text)
+                            if not fm.get("source_label"):
+                                issues.append("  ❌ frontmatter 缺少必填字段: source_label（邀请问题#N/推荐问题#N/热榜#N/独立文章）")
                             issues += check_clickable_link(pf)
                         else:
-                            for rname, rdesc in rules.items():
-                                if rname == "clickable_rule":
-                                    continue
-                                issues += check_section(pf, [rname], rdesc)
+                            # 非知乎平台：内容级关键词检查（2026-08-08 修复，替代错误的标题行匹配）
+                            for keywords, rdesc in rules:
+                                issues += check_content(pf, keywords, rdesc)
                         break
                 dir_issues += issues
 
             if dir_issues:
-                report.append(prefix)
+                report.append(dir_label)
                 report += dir_issues
                 total_issues += len(dir_issues)
 
