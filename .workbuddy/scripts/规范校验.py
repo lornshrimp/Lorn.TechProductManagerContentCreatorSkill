@@ -127,11 +127,44 @@ GENRE_MIN_WORDS = {
 # 平台适配版 frontmatter 必填字段（deai-adapt-* 规范：title/date/platform/topic，无 type）
 PLATFORM_YAML_KEYS = ["title", "date", "platform", "topic"]
 
+# 平台稿内容保真门禁（2026-08-10 新增，教训固化）：
+# 平台稿 = 终稿的平台化改写，不是摘要缩写。正文不得低于终稿字数的阈值比例。
+# 教训：2026-08-10 平台稿实测仅为终稿的 17%-41%（知乎 26%/微信 21%/头条 25%），
+# 等于把 2500 字深度内容压缩成 500-700 字摘要——根源是规范与脚本只查"关键词存在"不查内容量。
+PLATFORM_MIN_RATIO = {
+    "知乎-": 0.90,   # deai-adapt-zhihu：母稿信息不动、论证加厚，不得低于母稿
+    "微信-": 0.85,   # 公众号深度主阵地，不做缩水
+    "百家号-": 0.70,
+    "CSDN-": 0.70,
+    "头条-": 0.70,   # 短段落 ≠ 短内容
+}
+
+# 平台视觉要素门禁（2026-08-10 新增，教训固化）：
+# 每个平台稿除完整正文外，必须产出三组视觉要素（对应各 adapt 技能封面图/配图章节：
+# 知乎 7.5/7.6、微信 7.1-7.4、百家号 6.5/6.6、CSDN 8/9、头条 6.5/6.6）。
+# 教训：2026-08-10 全部 15 个平台稿均无封面图提示词/内容简介/配图规划——
+# 技能有定义但编排层未强制、校验层未检查，导致"有规范但产出被无视"。
+# 检查方式：全文关键词（封面图提示词标记 / 内容简介标记 / 配图锚文本+提示词标记）。
+PLATFORM_VISUAL_CHECKS = {
+    "cover": (["[封面图提示词]", "封面图", "题图", "AI 提示词", "prompt"], "封面图 AI 提示词（必填）"),
+    "summary": (["[内容简介]", "内容简介", "摘要"], "内容简介（必填）"),
+    "figures": (["[配图1]", "[配图", "## 配图详情", "配图搜索替换指令", "插入位置", "锚文本"],
+                "文中配图规划（≥1 张，含锚文本定位 + AI 提示词）"),
+}
+
+# 头条版封面图/内容简介检查（2026-08-10 新增：头条技能 6.5 明确封面图必填，
+# 但 TOUTIAO_CHECKS 原先只查"关注我"——头条版封面提示词/内容简介曾被整体漏检）
+TOUTIAO_VISUAL_REQUIRED = [
+    (["[封面图提示词]", "封面图", "题图", "AI 提示词", "prompt"], "封面图 AI 提示词（头条技能 6.5 必填）"),
+    (["[内容简介]", "内容简介", "摘要"], "内容简介（头条技能 6.5 摘要字段）"),
+]
+
 # 附属内容标记：统计正文时在此截断（草稿的素材溯源/质量自检、适配版的封面/配图/SEO 等）
 BODY_TRUNCATE_MARKERS = [
     "## 素材溯源", "## 标题决策说明", "## 质量自检报告", "## 封面图",
     "## 内容简介", "## 互动引导", "## SEO 关键词", "## 配图详情",
     "# 附属内容区域", "## 配图搜索替换指令", "## 参考来源",
+    "## 润色说明", "## 发布建议",
 ]
 
 
@@ -354,8 +387,30 @@ def main():
 
             # 平台适配版
             platform_files = [f for f in files if any(f.name.startswith(p) for p in PLATFORM_PREFIX)]
+
+            # 平台稿内容保真基准（2026-08-10 新增，教训固化）：以终稿字数为基准，
+            # 平台稿正文低于阈值比例即 ❌（平台稿=改写非摘要）。终稿缺失则跳过该项（其余检查兜底）。
+            final_refs = list(d.glob("终稿-*.md"))
+            final_chars = count_body_chars(final_refs[0]) if final_refs else 0
+
             for pf in sorted(platform_files):
                 issues = check_yaml_required(pf, PLATFORM_YAML_KEYS)
+
+                # 内容保真门禁：平台稿字数 ≥ 终稿 × 阈值（2026-08-10 新增）
+                # 教训：2026-08-10 平台稿实测仅为终稿 17%-41%，等于把深度文缩成摘要，
+                # 且因关键词检查通过而漏网——必须用字数比例硬性拦截"摘要式平台稿"。
+                if final_chars > 0:
+                    pf_pfx = next((p for p in PLATFORM_MIN_RATIO if pf.name.startswith(p)), "")
+                    if pf_pfx:
+                        ratio_min = PLATFORM_MIN_RATIO[pf_pfx]
+                        pn = count_body_chars(pf)
+                        if pn < final_chars * ratio_min:
+                            issues.append(
+                                f"  ❌ 平台稿内容缩水: {pf.name} 实测 {pn} 字"
+                                f"（终稿 {final_chars} 字的 {pn * 100 // final_chars}%）"
+                                f" < 保真底线 {int(ratio_min * 100)}%（平台稿=终稿改写非摘要，"
+                                f"核心论点/数据/金句必须全量保留）")
+
                 for pfx, rules in PLATFORM_PREFIX.items():
                     if pf.name.startswith(pfx):
                         if pfx == "知乎-":
@@ -374,6 +429,26 @@ def main():
                             for keywords, rdesc in rules:
                                 issues += check_content(pf, keywords, rdesc)
                         break
+
+                # 平台视觉要素门禁（2026-08-10 新增，教训固化）：
+                # 每个平台稿必须产出封面图提示词 + 内容简介 + 文中配图规划（锚文本+提示词）。
+                # 教训：2026-08-10 全部 15 个平台稿均无插图内容，因技能定义未被校验层拦截——
+                # 新增三组必检项（封面/简介/配图），任一缺失即 ❌。
+                # 头条版：封面/简介由 TOUTIAO_VISUAL_REQUIRED 专项检查（见下），此处跳过避免重复报。
+                if not pf.name.startswith("头条-"):
+                    for vk, (vkw, vdesc) in PLATFORM_VISUAL_CHECKS.items():
+                        if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in vkw):
+                            issues.append(f"  ❌ 平台视觉要素缺失: {vdesc}（适配技能封面图/配图章节必产）")
+
+                # 头条版专项：封面图 + 内容简介（头条技能 6.5 必填项，原 TOUTIAO_CHECKS 漏检）
+                if pf.name.startswith("头条-"):
+                    for vkw, vdesc in TOUTIAO_VISUAL_REQUIRED:
+                        if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in vkw):
+                            issues.append(f"  ❌ 头条版视觉要素缺失: {vdesc}")
+                    # 头条版配图检查（沿用通用 figures 规则）
+                    fk, fdesc = PLATFORM_VISUAL_CHECKS["figures"]
+                    if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in fk):
+                        issues.append(f"  ❌ 头条版视觉要素缺失: {fdesc}")
                 dir_issues += issues
 
             if dir_issues:
