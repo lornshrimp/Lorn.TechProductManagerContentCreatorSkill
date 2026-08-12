@@ -11,12 +11,18 @@
 - 只查"必填项"（技能中标注必须/强制的内容），不查建议项
 - 输出结构化报告，供执行代理逐项修复
 
+合规检查（2026-08-11 新增，对应 deai-compliance Skill）：
+- 平台稿与终稿高度雷同（≥99%，未做平台化改写）→ ❌
+- 两个平台版之间高度雷同（≥85%，机器复制特征/非真人自动化创作风险）→ ❌
+- 每日流水线选题目录必须含「合规自检表-*.md」（deai-compliance 必产出）→ ❌
+
 用法：
     python 规范校验.py --date 2026-08-08
     （缺省 --date 时使用今天）
 """
 
 import argparse
+import difflib
 import os
 import re
 import sys
@@ -166,6 +172,45 @@ BODY_TRUNCATE_MARKERS = [
     "# 附属内容区域", "## 配图搜索替换指令", "## 参考来源",
     "## 润色说明", "## 发布建议",
 ]
+
+# ============================================================
+# 合规检查配置（2026-08-11 新增，对应 deai-compliance Skill）
+# ============================================================
+# 背景：微信 2025-03「非真人自动化创作行为」专项条款（限流/删除/封号）、
+#      小红书 2025-02 AI 内容主动标识、知乎 2025-10 清朗行动、
+#      《AI 生成合成内容标识办法》2025-09-01 强制施行。
+#      平台稿必须"改写非复制"——与终稿雷同 = 未做平台化改写；平台间雷同 = 机器复制特征。
+COMPLIANCE_SIMILAR_TO_FINAL = 0.99  # 平台稿与终稿相似度 ≥99% → 未改写，❌
+COMPLIANCE_SIMILAR_PLATFORMS = 0.85  # 两平台版相似度 ≥85% → 机器复制特征，❌
+# 合规自检表文件名模式（deai-compliance 必产出）
+COMPLIANCE_CHECKFILE = "合规自检表"
+
+
+def extract_body_text(path: Path) -> str:
+    """提取正文纯文本（去 frontmatter/H1/附属区，去空白），用于相似度比对。
+    2026-08-11 新增：平台稿改写度检查的比对基础。"""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            text = text[end + 4:]
+    text = re.sub(r"^#\s+.*$", "", text, flags=re.MULTILINE)
+    for marker in BODY_TRUNCATE_MARKERS:
+        idx = text.find(marker)
+        if idx != -1:
+            text = text[:idx]
+            break
+    return re.sub(r"\s+", "", text)
+
+
+def text_similarity(a: str, b: str) -> float:
+    """两段文本相似度（0-1，基于 SequenceMatcher）。
+    必须关闭 autojunk：SequenceMatcher 默认将出现频率 >1% 的字符视为 junk 不参与匹配，
+    对高度重复的中文文本（如测试样例"这是正文内容"×N）会误判相似度为 0——
+    这正是"校验脚本修改后必须用已知不达标样例验证"铁律要拦截的假阴性。"""
+    if not a or not b:
+        return 0.0
+    return difflib.SequenceMatcher(a=a, b=b, autojunk=False).ratio()
 
 
 def parse_yaml_frontmatter(text: str) -> tuple:
@@ -325,15 +370,23 @@ def main():
                         total_issues += len(issues)
 
     # ---------- 3. drafts 各选题目录 ----------
+    # 目录结构（2026-08-12 起）：drafts/{日期}/{选题名}/；兼容历史遗留的 drafts/{选题名}/ 顶层目录。
     drafts_dir = root / "drafts"
     if drafts_dir.exists():
+        topic_dirs = []
         for d in sorted(drafts_dir.iterdir()):
             if not d.is_dir():
                 continue
+            # 日期格式目录（YYYY-MM-DD）→ 其子目录为选题目录
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d.name):
+                topic_dirs += [c for c in sorted(d.iterdir()) if c.is_dir()]
+            else:
+                topic_dirs.append(d)  # 历史遗留：顶层即选题目录
+        for d in topic_dirs:
             files = list(d.glob("*.md"))
             if not files:
                 continue
-            dir_label = f"\n[选题目录] {d.name}"
+            dir_label = f"\n[选题目录] {d.relative_to(root)}"
             dir_issues = []
 
             # 大纲
@@ -369,6 +422,14 @@ def main():
             if not list(d.glob("编辑终审签报-*.md")):
                 dir_issues.append("  ❌ 缺少「编辑终审签报-*.md」（deai-review 必产出）")
 
+            # 合规自检表（2026-08-11 新增，deai-compliance 必产出）：
+            # 若目录已有终稿（=走完 review 的完整选题），必须有合规自检表才可进入发布。
+            # 背景：微信"非真人自动化创作行为"条款与定时流水线冲突，发布前必须人工确认 + 合规自检。
+            if list(d.glob("终稿-*.md")) and not list(d.glob(f"{COMPLIANCE_CHECKFILE}-*.md")) \
+                    and not list(d.glob(f"{COMPLIANCE_CHECKFILE}.md")):
+                dir_issues.append("  ❌ 缺少「合规自检表」（deai-compliance 必产出——"
+                                  "发布前须确认 AI 参与度分级/发布节奏人性化/人工确认节点）")
+
             # 字数实测门禁（2026-08-08 新增，硬性）：从大纲 frontmatter 读 genre → 体裁底线；
             # 草稿/润色稿/终稿正文中文字数不足即 ❌。禁止估算字数——估算通过 = 本轮事故根因。
             genre = "深度分析体"
@@ -395,6 +456,18 @@ def main():
 
             for pf in sorted(platform_files):
                 issues = check_yaml_required(pf, PLATFORM_YAML_KEYS)
+
+                # 合规：平台稿与终稿相似度（2026-08-11 新增）
+                # 背景：平台稿 = 终稿的平台化改写；若与终稿高度雷同（≥99%）说明未做平台化改写，
+                # 且"多平台同文"是微信"非真人自动化创作行为"的高危特征。
+                # 注意：知乎版允许接近母稿（论证加厚），此处阈值 0.99 只拦"一字不改的复制"。
+                if final_refs:
+                    sim = text_similarity(extract_body_text(pf), extract_body_text(final_refs[0]))
+                    if sim >= COMPLIANCE_SIMILAR_TO_FINAL:
+                        issues.append(
+                            f"  ❌ 平台稿与终稿高度雷同（相似度 {sim:.0%} ≥ {COMPLIANCE_SIMILAR_TO_FINAL:.0%}）："
+                            f"{pf.name} 疑似未做平台化改写——必须按平台特性调整结构/语气/标题/段落，"
+                            f"禁止多平台同文复制（非真人自动化创作风险）")
 
                 # 内容保真门禁：平台稿字数 ≥ 终稿 × 阈值（2026-08-10 新增）
                 # 教训：2026-08-10 平台稿实测仅为终稿 17%-41%，等于把深度文缩成摘要，
@@ -450,6 +523,23 @@ def main():
                     if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in fk):
                         issues.append(f"  ❌ 头条版视觉要素缺失: {fdesc}")
                 dir_issues += issues
+
+            # 合规：平台版两两相似度（2026-08-11 新增）
+            # 背景：多平台版本应各自改写；若两平台版高度雷同（≥85%）说明是同文复制，
+            # 机器批量发布特征明显（微信/知乎/小红书风控重点），必须各自改写差异化。
+            plat_texts = {}
+            for pf in sorted(platform_files):
+                plat_texts[pf.name] = extract_body_text(pf)
+            names = sorted(plat_texts)
+            for i in range(len(names)):
+                for j in range(i + 1, len(names)):
+                    a, b = names[i], names[j]
+                    sim = text_similarity(plat_texts[a], plat_texts[b])
+                    if sim >= COMPLIANCE_SIMILAR_PLATFORMS:
+                        dir_issues.append(
+                            f"  ❌ 平台版高度雷同（相似度 {sim:.0%} ≥ {COMPLIANCE_SIMILAR_PLATFORMS:.0%}）："
+                            f"{a} vs {b}——两平台版必须差异化改写（结构/语气/案例/引导不同），"
+                            f"禁止同文复制（非真人自动化创作风险）")
 
             if dir_issues:
                 report.append(dir_label)

@@ -318,7 +318,7 @@ Source Adapter 清单（每个独立维护，放在 `.github/skills/deai-hotspot
 | 文件名 | `.github/skills/deai-outline/SKILL.md` |
 | 职责 | 根据选题卡和（可选）研究报告生成结构化文章大纲，匹配最适合的体裁 |
 | 输入 | 选题卡，可选 `research/{选题名}/研究报告.md` |
-| 输出 | `drafts/{选题名}/大纲.md` |
+| 输出 | `drafts/{日期}/{选题名}/大纲.md` |
 | 去AI化 | 预留"个人经验插入点"，标注需要补充真实案例的位置 |
 | 触发方式 | `@deai-outline` |
 | 依赖 Skill | `deai-topic`、`deai-research`（可选）、`.github/instructions/persona-product-manager-shrimp.instructions.md` |
@@ -511,7 +511,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 文件名 | `.github/skills/deai-write/SKILL.md` |
 | 职责 | 按照大纲 + 人设基线完成全文写作，内置去 AI 化约束。如有研究报告，自动将数据和案例融入文章 |
 | 输入 | 大纲文件、人设基线，可选 `research/{选题名}/研究报告.md` |
-| 输出 | `drafts/{选题名}/草稿.md` |
+| 输出 | `drafts/{日期}/{选题名}/草稿.md` |
 | 去AI化 | **强约束**（见下方专节） |
 | 触发方式 | `@deai-write` |
 | 依赖 Skill | `deai-outline`、`deai-research`（可选）、`.github/instructions/persona-product-manager-shrimp.instructions.md` |
@@ -548,8 +548,8 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | ---- | ---- |
 | 文件名 | `.github/skills/deai-polish/SKILL.md` |
 | 职责 | 对草稿做专项去 AI 化处理，检测并清除所有"AI 味" |
-| 输入 | `drafts/{选题名}/草稿.md` |
-| 输出 | `drafts/{选题名}/终稿.md` + `drafts/{选题名}/去AI化报告.md` |
+| 输入 | `drafts/{日期}/{选题名}/草稿.md` |
+| 输出 | `drafts/{日期}/{选题名}/终稿.md` + `drafts/{日期}/{选题名}/去AI化报告.md` |
 | 检测维度 | 7 项（见下方） |
 | 触发方式 | `@deai-polish` |
 | 依赖 Skill | `deai-write`、`.github/instructions/persona-product-manager-shrimp.instructions.md` |
@@ -605,8 +605,8 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | ---- | ---- |
 | 文件名 | `.github/skills/deai-review/SKILL.md` |
 | 职责 | 对终稿做最终质量检查，给出通过/需修改/驳回结论 |
-| 输入 | `drafts/{选题名}/终稿.md` |
-| 输出 | `drafts/{选题名}/审核报告.md` |
+| 输入 | `drafts/{日期}/{选题名}/终稿.md` |
+| 输出 | `drafts/{日期}/{选题名}/审核报告.md` |
 | 触发方式 | `@deai-review` |
 | 依赖 Skill | `deai-polish` |
 
@@ -639,17 +639,17 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 
 | Skill | 文件名 | 职责 | 输出文件 |
 | ----- | ------ | ---- | -------- |
-| `deai-adapt-zhihu` | `.github/skills/deai-adapt-zhihu/SKILL.md` | 将母稿改写为知乎适配版本 | `drafts/{选题名}/知乎/文章.md` |
-| `deai-adapt-wechat` | `.github/skills/deai-adapt-wechat/SKILL.md` | 将母稿改写为微信公众号适配版本 | `drafts/{选题名}/公众号/文章.md` |
-| `deai-adapt-toutiao` | `.github/skills/deai-adapt-toutiao/SKILL.md` | 将母稿改写为今日头条适配版本 | `drafts/{选题名}/头条/文章.md` |
-| `deai-adapt-baiduhao` | `.github/skills/deai-adapt-baiduhao/SKILL.md` | 将母稿改写为百家号适配版本 | `drafts/{选题名}/百家号/文章.md` |
-| `deai-adapt-csdn` | `.github/skills/deai-adapt-csdn/SKILL.md` | 将母稿改写为 CSDN/掘金适配版本 | `drafts/{选题名}/CSDN/文章.md` |
+| `deai-adapt-zhihu` | `.github/skills/deai-adapt-zhihu/SKILL.md` | 将母稿改写为知乎适配版本 | `drafts/{日期}/{选题名}/知乎/文章.md` |
+| `deai-adapt-wechat` | `.github/skills/deai-adapt-wechat/SKILL.md` | 将母稿改写为微信公众号适配版本 | `drafts/{日期}/{选题名}/公众号/文章.md` |
+| `deai-adapt-toutiao` | `.github/skills/deai-adapt-toutiao/SKILL.md` | 将母稿改写为今日头条适配版本 | `drafts/{日期}/{选题名}/头条/文章.md` |
+| `deai-adapt-baiduhao` | `.github/skills/deai-adapt-baiduhao/SKILL.md` | 将母稿改写为百家号适配版本 | `drafts/{日期}/{选题名}/百家号/文章.md` |
+| `deai-adapt-csdn` | `.github/skills/deai-adapt-csdn/SKILL.md` | 将母稿改写为 CSDN/掘金适配版本 | `drafts/{日期}/{选题名}/CSDN/文章.md` |
 
 **通用属性（所有改写 Skill 共享）：**
 
 | 项目 | 说明 |
 | ---- | ---- |
-| 输入 | `drafts/{选题名}/终稿.md`（母稿） |
+| 输入 | `drafts/{日期}/{选题名}/终稿.md`（母稿） |
 | 输出 | 见上表（各平台独立文件） |
 | 去AI化 | 按各平台真人作者风格调整语气，进一步淡化 AI 痕迹 |
 | 触发方式 | `@deai-adapt-xxx` |
@@ -679,7 +679,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 语气倾向 | 理性专业，第一人称"我"但不过度个人化 |
 | 段落特征 | 中等长度，允许 5-8 句深度论证段 |
 | 结尾引导 | 开放式提问，引导评论区讨论 |
-| 输出文件 | `drafts/{选题名}/知乎/文章.md` |
+| 输出文件 | `drafts/{日期}/{选题名}/知乎/文章.md` |
 | 调用方式 | `@deai-adapt-zhihu` |
 
 ##### `deai-adapt-wechat` — 微信公众号改写
@@ -693,7 +693,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 语气倾向 | 亲切个人，像朋友聊天 |
 | 段落特征 | 中短段落，适合手机阅读 |
 | 结尾引导 | 引导在看+转发+关注 |
-| 输出文件 | `drafts/{选题名}/公众号/文章.md` |
+| 输出文件 | `drafts/{日期}/{选题名}/公众号/文章.md` |
 | 调用方式 | `@deai-adapt-wechat` |
 
 ##### `deai-adapt-toutiao` — 今日头条改写
@@ -707,7 +707,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 语气倾向 | 快节奏、直接、口语化 |
 | 段落特征 | 短段落，每段 1-3 句，高频小标题 |
 | 结尾引导 | 引导关注 + 收藏 |
-| 输出文件 | `drafts/{选题名}/头条/文章.md` |
+| 输出文件 | `drafts/{日期}/{选题名}/头条/文章.md` |
 | 调用方式 | `@deai-adapt-toutiao` |
 
 ##### `deai-adapt-baiduhao` — 百家号改写
@@ -721,7 +721,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 语气倾向 | 中立客观，减少第一人称 |
 | 段落特征 | 信息点密集，多用列表和分段 |
 | 结尾引导 | 自然收束，引导相关阅读 |
-| 输出文件 | `drafts/{选题名}/百家号/文章.md` |
+| 输出文件 | `drafts/{日期}/{选题名}/百家号/文章.md` |
 | 调用方式 | `@deai-adapt-baiduhao` |
 
 ##### `deai-adapt-csdn` — CSDN/掘金改写
@@ -735,7 +735,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | 语气倾向 | 专业、简明、实操导向 |
 | 段落特征 | 结构化，多用代码/流程图/列表 |
 | 结尾引导 | 引导收藏 + 评论交流 |
-| 输出文件 | `drafts/{选题名}/CSDN/文章.md` |
+| 输出文件 | `drafts/{日期}/{选题名}/CSDN/文章.md` |
 | 调用方式 | `@deai-adapt-csdn` |
 
 ---
@@ -777,7 +777,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 | ---- | ---- |
 | 文件名 | `.github/skills/deai-publish/SKILL.md` |
 | 职责 | 将各平台改写版本逐一发布到对应平台 |
-| 输入 | `drafts/{选题名}/{平台}/文章.md`（各平台改写版） |
+| 输入 | `drafts/{日期}/{选题名}/{平台}/文章.md`（各平台改写版） |
 | 输出 | `published/{日期}/{选题名}-发布记录.md` |
 | 触发方式 | `@deai-publish` |
 | 依赖 Skill | `deai-adapt-zhihu`、`deai-adapt-wechat`、`deai-adapt-toutiao`、`deai-adapt-baiduhao`、`deai-adapt-csdn`（至少一个已执行） |
@@ -786,7 +786,7 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 
 ```text
 对每个目标平台：
-  ① 读取 drafts/{选题名}/{平台}/文章.md（该平台的改写版）
+  ① 读取 drafts/{日期}/{选题名}/{平台}/文章.md（该平台的改写版）
   ② 根据平台要求做最终格式调整（封面图、摘要、标签）
   ③ 手动复制到平台编辑器 / Playwright 半自动发布
   ④ 记录发布 URL 和状态到 published/{日期}/{选题名}-发布记录.md
@@ -958,7 +958,8 @@ deai-polish  → 研究报告提供的事实可以作为"去 AI 化"的锚点—
 │       └── 素材库.md
 │
 ├── drafts/                              # 文章生产区
-│   └── {选题名}/
+│   └── {日期}/                          # 按当天日期分层（YYYY-MM-DD）
+│       └── {选题名}/
 │       ├── 大纲.md
 │       ├── 草稿.md
 │       ├── 终稿.md                       # 母稿（所有改写 Skill 的输入）
@@ -1029,7 +1030,7 @@ graph TD
         HL[hotspot/榜单/<br/>{日期}-{来源}.md<br/>{日期}-融合榜单.md]
         TC[hotspot/选题/<br/>{日期}-选题卡.md]
         RE[research/{选题名}/<br/>研究报告.md]
-        DR[drafts/{选题名}/<br/>母稿+各平台改写版]
+        DR[drafts/{日期}/{选题名}/<br/>母稿+各平台改写版]
         PR[published/]
     end
 
@@ -1072,26 +1073,26 @@ graph TD
      ↓ 产出 research/{选题名}/研究报告.md
 
 4️⃣  @deai-outline  基于研究报告生成大纲
-     ↓ 产出 drafts/{选题名}/大纲.md
+     ↓ 产出 drafts/{日期}/{选题名}/大纲.md
 
 5️⃣  @deai-write  按照大纲写完整文章（母稿）
-     ↓ 产出 drafts/{选题名}/草稿.md
+     ↓ 产出 drafts/{日期}/{选题名}/草稿.md
 
 6️⃣  @deai-polish  做去 AI 化润色
-     ↓ 产出 drafts/{选题名}/终稿.md + 去AI化报告.md
+     ↓ 产出 drafts/{日期}/{选题名}/终稿.md + 去AI化报告.md
 
 7️⃣  @deai-review  审核终稿
-     ↓ 产出 drafts/{选题名}/审核报告.md
+     ↓ 产出 drafts/{日期}/{选题名}/审核报告.md
      → 不通过则返回步骤 5
 
 8️⃣  @deai-adapt-zhihu  改写为知乎版
-     ↓ 产出 drafts/{选题名}/知乎/文章.md
+     ↓ 产出 drafts/{日期}/{选题名}/知乎/文章.md
 
 9️⃣  @deai-adapt-wechat  改写为公众号版
-     ↓ 产出 drafts/{选题名}/公众号/文章.md
+     ↓ 产出 drafts/{日期}/{选题名}/公众号/文章.md
 
 🔟  @deai-adapt-toutiao  改写为头条版
-     ↓ 产出 drafts/{选题名}/头条/文章.md
+     ↓ 产出 drafts/{日期}/{选题名}/头条/文章.md
 
 11️⃣ @deai-publish  发布各平台改写版
      ↓ 产出 published/2026-06-23/{选题名}-发布记录.md

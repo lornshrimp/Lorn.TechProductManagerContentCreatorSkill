@@ -20,7 +20,7 @@ user-invocable: true
 
 ## Output
 
-- `drafts/{选题名}/大纲.md`
+- `drafts/{日期}/{选题名}/大纲.md`
 
 ---
 
