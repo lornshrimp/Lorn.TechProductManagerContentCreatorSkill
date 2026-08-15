@@ -186,6 +186,71 @@ COMPLIANCE_SIMILAR_PLATFORMS = 0.85  # 两平台版相似度 ≥85% → 机器�
 COMPLIANCE_CHECKFILE = "合规自检表"
 
 
+def check_anchor_quality(path: Path) -> list:
+    """配图锚文本质量门禁（2026-08-14 新增，教训固化）。
+
+    背景：2026-08-14 用户复核指出——平台稿配图锚文本不是段落首句，人工 Ctrl+F
+    定位困难。当日核查 15 稿 24 锚点：9 处锚文本在正文完全搜不到（指向小标题/
+    笔误），3 处出现在段落第二句（人工需先找到段再往下一句看）。
+
+    门禁规则（每个 [配图N] 的锚文本必须）：
+    ① 在正文区（配图区前）唯一出现（出现次数 == 1，避免多匹配）
+    ② 位于所在段落首句（锚文本前是段落边界或句末标点），或锚定表格行（表格场景
+       无正文段可锚，允许锚表格单元格，如 "| 计费项"）
+    ③ 配图搜索替换指令区包含该锚文本（「锚」格式）
+    """
+    issues = []
+    try:
+        c = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return issues
+    # 提取所有锚文本
+    anchors = []
+    for line in c.split("\n"):
+        if "锚文本定位" in line and "**" in line:
+            parts = line.split("**")
+            if len(parts) >= 3:
+                a = parts[2].strip().strip("：: ").strip('"').strip("'")
+                if a:
+                    anchors.append(a)
+    if not anchors:
+        return issues  # 无配图锚文本时由 figures 存在性检查兜底
+    # 正文区：frontmatter 后、配图区前
+    body = c
+    if body.startswith("---"):
+        end = body.find("\n---", 3)
+        body = body[end + 4:] if end != -1 else body
+    for marker in ["[封面图提示词]", "[配图1]"]:
+        idx = body.find(marker)
+        if idx != -1:
+            body = body[:idx]
+            break
+    for a in anchors:
+        cnt = body.count(a)
+        if cnt == 0:
+            issues.append(f"  ❌ 配图锚文本未命中正文: 「{a}」——正文搜不到，人工无法定位（须取目标段落首句）")
+            continue
+        if cnt > 1:
+            issues.append(f"  ❌ 配图锚文本不唯一: 「{a}」在正文出现 {cnt} 次——须取唯一短句")
+            continue
+        # 段首判定：锚文本必须精确位于段落首句——锚文本到最近段落边界之间
+        # 只能是空白（\n）或段落起始，不能有其他正文文字。
+        pos = body.find(a)
+        seg = body[:pos]  # 锚文本之前全部内容
+        # 找最近的一个段落分隔（\n\n）或文件开头
+        seg_start = seg.rfind("\n\n")
+        seg_tail = seg[seg_start + 2:] if seg_start != -1 else seg
+        # seg_tail 是锚文本所在段落的段首前缀，应为空（锚在段首）或仅含零宽字符
+        is_start = seg_tail.strip() == ""
+        is_table = f"| {a}" in body or f"|{a}" in body  # 表格行例外
+        if not (is_start or is_table):
+            issues.append(f"  ❌ 配图锚文本非段落首句: 「{a}」——须取该段落第一句（人工 Ctrl+F 从段首定位）")
+        # 指令区同步检查
+        if f"「{a}」" not in c:
+            issues.append(f"  ❌ 配图搜索替换指令缺锚: 「{a}」未出现在配图搜索替换指令区")
+    return issues
+
+
 def extract_body_text(path: Path) -> str:
     """提取正文纯文本（去 frontmatter/H1/附属区，去空白），用于相似度比对。
     2026-08-11 新增：平台稿改写度检查的比对基础。"""
@@ -211,6 +276,93 @@ def text_similarity(a: str, b: str) -> float:
     if not a or not b:
         return 0.0
     return difflib.SequenceMatcher(a=a, b=b, autojunk=False).ratio()
+
+
+def _raw_body(path: Path) -> str:
+    """提取原始正文（保留段落结构）：去 frontmatter/H1/Clickable/附属区，不压缩空白。"""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        text = text[end + 4:] if end != -1 else text
+    text = re.sub(r"^#\s+.*$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\[→.*$", "", text, flags=re.MULTILINE)
+    cut = len(text)
+    for marker in BODY_TRUNCATE_MARKERS + ["[封面图提示词]", "[内容简介]", "[配图"]:
+        idx = text.find(marker)
+        if idx != -1:
+            cut = min(cut, idx)
+    return text[:cut]
+
+
+def check_platform_coherence(path: Path, final_path: Path) -> list:
+    """平台稿正文连贯性门禁（2026-08-13 新增，当日两轮修订至最终语义）。
+
+    拦截"两篇文章拼一起"式的割裂产出——2026-08-13 实际发生并被人工复核拦截：
+    平台稿补字时把终稿原文段落原样粘贴进平台稿，与已写内容重复、读起来前后割裂。
+    ⚠️ 两个设计定论（来自用户复核 2026-08-13）：
+    1. 割裂感的本质不是 `---` 分隔符（那是合法 markdown，任何平台稿都允许有多个），
+       而是"前后段看起来就是两篇文章放一块儿了"；
+    2. "保留母稿内容"本身不是问题——知乎 ≥90%/微信 ≥85% 保真是铁律，平台稿含大量
+       与终稿逐字相同的段落属正常形态；知乎版同样不因"接近母稿"豁免。
+       真正的问题只有一个：母稿原文段落被拼进来且与已写内容重复（同一论点说两遍），
+       或集中堆砌成"第二篇文章"——这两者都会让读者感到割裂。
+    ⚠️ 故本门禁只检测一个信号：**与前方正文的内容重复**（前文重复 = 第二篇在复述第一篇，
+    最硬的割裂证据）。"母稿段的位置/长度/连续性"均不作为信号（微信 85% 保真下必然误报）。
+    判定：
+    ① 找出正文中与终稿段落逐字相似（相似度 ≥0.9 且 ≥60 字）的母稿逐字段；
+    ② 任一母稿逐字段与其前方任一非母稿段相似度 ≥0.55（同一表述/同一数据出现两遍）→ ❌。
+    正确做法：平台稿一次性写成完整连贯文章，保留母稿论点必须改写成平台风格并放在
+    首次出现的位置；不得把母稿原文段落二次引入已论述过的内容。"""
+    issues = []
+    body = _raw_body(path)
+    if not body.strip():
+        return issues
+
+    paras = [p.strip() for p in re.split(r"\n{2,}", body) if p.strip()]
+    if len(paras) < 4:
+        return issues
+
+    def _norm(p: str) -> str:
+        return re.sub(r"\s+", "", p)
+
+    final_paras = [_norm(p) for p in re.split(r"\n{2,}", _raw_body(final_path))
+                   if len(_norm(p)) >= 60]
+
+    copied_idx = []
+    for i, p in enumerate(paras):
+        np = _norm(p)
+        if len(np) < 60:
+            continue
+        if any(text_similarity(np, fp) >= 0.9 for fp in final_paras):
+            copied_idx.append(i)
+
+    if not copied_idx:
+        return issues
+
+    # 前文重复检测：母稿逐字段 vs 位置在前的非母稿段
+    copied_set = set(copied_idx)
+    dup = False
+    dup_pair = None
+    for ci in copied_idx:
+        for j in range(ci):
+            if j in copied_set:
+                continue
+            s = text_similarity(_norm(paras[ci]), _norm(paras[j]))
+            if s >= 0.55:
+                dup = True
+                dup_pair = (j, ci, s)
+                break
+        if dup:
+            break
+
+    if dup:
+        j, ci, s = dup_pair
+        issues.append(
+            f"  ❌ 平台稿正文连贯性: 正文第 {ci + 1} 段（与终稿逐字相同，≥60 字）与前方第 {j + 1} 段"
+            f"内容重复（相似度 {s:.0%}）——同一论点出现两遍，读起来像两篇文章拼一起"
+            f"（割裂感与 `---` 分隔符无关，任何平台稿都禁止重复引入母稿原文段，知乎版同样不豁免）；"
+            f"保留母稿论点必须改写成平台风格并在首次出现处一次性讲完，删除重复段落")
+    return issues
 
 
 def parse_yaml_frontmatter(text: str) -> tuple:
@@ -484,6 +636,14 @@ def main():
                                 f" < 保真底线 {int(ratio_min * 100)}%（平台稿=终稿改写非摘要，"
                                 f"核心论点/数据/金句必须全量保留）")
 
+                # 平台稿正文连贯性门禁（2026-08-13 新增，教训固化）：
+                # 拦截"骨架+注入终稿段落硬凑字数"式写法（2026-08-13 发生并被人工复核拦截——
+                # 补字用脚本把终稿段落原样粘贴到正文末尾，正文被 --- 割裂、内容重复风格断裂）。
+                # 教训再固化：平台稿必须一次性写成完整连贯文章，补字必须在对应章节内平台化扩写，
+                # 禁止"骨架+尾部堆砌"。注意：本检查放在字数保真门禁之后、平台专项检查之前。
+                if final_refs:
+                    issues += check_platform_coherence(pf, final_refs[0])
+
                 for pfx, rules in PLATFORM_PREFIX.items():
                     if pf.name.startswith(pfx):
                         if pfx == "知乎-":
@@ -522,6 +682,10 @@ def main():
                     fk, fdesc = PLATFORM_VISUAL_CHECKS["figures"]
                     if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in fk):
                         issues.append(f"  ❌ 头条版视觉要素缺失: {fdesc}")
+                # 配图锚文本质量门禁（2026-08-14 新增，教训固化）：
+                # 锚文本必须是正文中唯一出现、且位于段落首句的短句（人工 Ctrl+F 可从段首
+                # 定位），禁止锚定小标题/正文搜不到的文本；表格场景允许锚表格行。
+                issues += check_anchor_quality(pf)
                 dir_issues += issues
 
             # 合规：平台版两两相似度（2026-08-11 新增）
