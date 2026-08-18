@@ -78,10 +78,39 @@ OUTLINE_CHECKS = {
 }
 
 # 标题方案（deai-title）：候选池 + 评分表
+# 2026-08-16 升级（deai-title 优化研究报告 P0）：
+# ① 候选池数量门槛从 ≥5 提升至 ≥12（快讯评点体豁免 ≥8）——对齐 skill Step 3 "12-18 个"；
+# ② 新增平台标题溯源检查：平台适配表首选/备选标题必须能在候选池中找到（相似度 ≥0.90），
+#    禁止平台适配环节临时新造标题（抽查发现 CSDN 首选标题脱离候选池、绕过六维评分）。
 TITLE_CHECKS = {
-    "候选池": "必须含「候选池」章节（≥5 个候选）",
+    "候选池": "必须含「候选池」章节（≥12 个候选；快讯评点体 ≥8）",
     "评分表": "必须含「评分表」或「六维评分」章节",
     "平台适配": "必须含「平台适配」章节（各平台首选标题）",
+}
+
+# 标题方案：候选池数量底线（2026-08-16 新增，对齐 skill Step 3 "12-18 个"）
+TITLE_CANDIDATE_MIN = 12
+TITLE_CANDIDATE_MIN_BREAKING_NEWS = 8   # 快讯评点体候选空间小，豁免底线
+# 平台适配标题溯源：与候选池相似度低于该阈值视为"新造标题"（平台标题必须来自候选池 Top5）
+TITLE_TRACE_SIMILARITY = 0.90
+# deai-title v2.2 生效日期：该日期及之后的标题方案强制候选池数量/平台标题溯源检查
+# （v2.2 前历史产出按旧规范执行——平台标题=候选池改写，溯源检查会大量误报，不强制）
+TITLE_V22_EFFECTIVE_DATE = "2026-08-16"
+
+# 平台标题字数合规区间（2026-08-16 新增，对应 deai-title v2.2 Step 5 平台字数表）：
+# 平台适配后的标题字数必须落在平台区间内（超限在移动端截断=信息丢失）。
+# 数据来源：2025-2026 各平台标题规范交叉验证（skill Step 5 已固化）。
+# 注意：仅对"平台适配章节中的实际标题"做检查——v2.1 历史产出（推荐标题+理由列）兼容跳过。
+PLATFORM_TITLE_LEN = {
+    "知乎": (15, 35),
+    "公众号": (15, 25),
+    "微信": (15, 25),
+    "头条": (18, 25),
+    "小红书": (1, 20),
+    "百家号": (20, 30),
+    "视频号": (1, 15),
+    "CSDN": (1, 60),
+    "掘金": (1, 60),
 }
 
 # 微信版（deai-adapt-wechat）：封面图提示词 + 内容简介（内容级关键词检查，2026-08-08 修复）
@@ -187,7 +216,7 @@ COMPLIANCE_CHECKFILE = "合规自检表"
 
 
 def check_anchor_quality(path: Path) -> list:
-    """配图锚文本质量门禁（2026-08-14 新增，教训固化）。
+    """配图锚文本质量门禁（2026-08-14 新增，2026-08-18 修订语义）。
 
     背景：2026-08-14 用户复核指出——平台稿配图锚文本不是段落首句，人工 Ctrl+F
     定位困难。当日核查 15 稿 24 锚点：9 处锚文本在正文完全搜不到（指向小标题/
@@ -195,8 +224,10 @@ def check_anchor_quality(path: Path) -> list:
 
     门禁规则（每个 [配图N] 的锚文本必须）：
     ① 在正文区（配图区前）唯一出现（出现次数 == 1，避免多匹配）
-    ② 位于所在段落首句（锚文本前是段落边界或句末标点），或锚定表格行（表格场景
-       无正文段可锚，允许锚表格单元格，如 "| 计费项"）
+    ② 位于"一眼可见"位置之一：所在段落首句（锚文本前是段落边界），或 markdown
+       小标题行（## / ###，2026-08-18 修订：小标题作锚合法——同样 Ctrl+F 好定位，
+       废止 08-14 "禁止小标题作锚" 旧规），或表格行（如 "| 计费项"）。三者之外的
+       （藏在段落正文中间的一句/半句）判违规——人工定位难。
     ③ 配图搜索替换指令区包含该锚文本（「锚」格式）
     """
     issues = []
@@ -204,15 +235,22 @@ def check_anchor_quality(path: Path) -> list:
         c = path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return issues
-    # 提取所有锚文本
+    # 提取所有锚文本（2026-08-18 修复：兼容「锚文本：xxx」与「锚文本定位：**xxx**」两种产出格式）
+    # 历史 bug：仅按 "锚文本定位"+** 提取，而实际产出多为 「锚文本：xxx」，导致 anchors 为空 →
+    # if not anchors: return issues → 静默跳过质量门禁（假阴性），锚文本非段首问题长期漏检。
     anchors = []
     for line in c.split("\n"):
-        if "锚文本定位" in line and "**" in line:
-            parts = line.split("**")
-            if len(parts) >= 3:
-                a = parts[2].strip().strip("：: ").strip('"').strip("'")
-                if a:
-                    anchors.append(a)
+        ls = line.strip()
+        # 仅处理「锚文本：」/「锚文本:」前缀行（配图详情区）；排除配图搜索替换指令区
+        # （含「在正文找到唯一锚文本」「插入 [配图」等）与「## 配图搜索替换指令」标题行
+        if not ls.startswith("锚文本"):
+            continue
+        if "在正文找到唯一锚文本" in ls or "之后的段落后" in ls or "插入 [" in ls:
+            continue
+        val = re.sub(r"^锚文本\s*[:：]", "", ls).strip()
+        a = val.strip('"').strip("'").strip("#").strip()
+        if a and not a.startswith("[配图") and "锚文本" not in a:
+            anchors.append(a)
     if not anchors:
         return issues  # 无配图锚文本时由 figures 存在性检查兜底
     # 正文区：frontmatter 后、配图区前
@@ -243,8 +281,21 @@ def check_anchor_quality(path: Path) -> list:
         # seg_tail 是锚文本所在段落的段首前缀，应为空（锚在段首）或仅含零宽字符
         is_start = seg_tail.strip() == ""
         is_table = f"| {a}" in body or f"|{a}" in body  # 表格行例外
-        if not (is_start or is_table):
-            issues.append(f"  ❌ 配图锚文本非段落首句: 「{a}」——须取该段落第一句（人工 Ctrl+F 从段首定位）")
+        # 小标题作锚例外（2026-08-18 修订，废止"禁止小标题作锚"旧规）：
+        # 锚文本若为 markdown 小标题行（## / ###）文本，同样一眼可见、Ctrl+F 好定位，视为合法。
+        # 判定：取锚文本 pos 所在行，去除行首空白与 # 标记后，若锚文本构成该行主体则判为小标题作锚。
+        is_heading = False
+        ls = body.rfind("\n", 0, pos)
+        le = body.find("\n", pos)
+        anchor_line = body[ls + 1: le if le != -1 else len(body)]
+        anchor_stripped = anchor_line.strip()
+        if anchor_stripped.startswith("#"):
+            hl_clean = anchor_stripped.lstrip("#").strip()
+            a_clean = a.strip()
+            if a_clean in hl_clean or hl_clean in a_clean:
+                is_heading = True
+        if not (is_start or is_table or is_heading):
+            issues.append(f"  ❌ 配图锚文本藏在段落中间: 「{a}」——既不取该段第一句也算不上小标题，人工 Ctrl+F 定位难（应锚段落首句或小标题）")
         # 指令区同步检查
         if f"「{a}」" not in c:
             issues.append(f"  ❌ 配图搜索替换指令缺锚: 「{a}」未出现在配图搜索替换指令区")
@@ -405,6 +456,310 @@ def check_section(path: Path, section_names: list, desc: str) -> list:
     return issues
 
 
+def extract_title_candidates(path: Path) -> list:
+    """从标题方案「候选池」章节提取候选标题列表（纯文本，去 markdown 标记）。
+
+    兼容两种格式（deai-title 历史与现行输出均覆盖）：
+    A. 表格格式：| # | 标题 | 类型 | → 取第二列
+    B. 分节列表格式：
+        ### 反直觉式（4 个）
+        1. 标题一 [大纲种子]
+        2. 标题二
+    章节边界：下一个 H2（## 开头）为止；候选池内部的 ### 小节不算边界。"""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    # 定位「候选池」章节（H2 级："## 三、标题候选池（共 N 个）" 等变体）。
+    # 必须限定 ^#{2,4} 避免误匹配 H1 主标题（如"# 标题方案 · xxx候选池xxx"）。
+    m = re.search(r"^#{2,4}\s*.*候选池.*$", text, re.MULTILINE)
+    if not m:
+        return []
+    start = m.end()
+    # 边界：下一个 H2（## 后不跟 #），避免 ### 小节标题截断内容
+    nxt = re.search(r"^##(?!#)\s+", text[start:], re.MULTILINE)
+    seg = text[start: start + nxt.start()] if nxt else text[start:]
+    titles = []
+    for line in seg.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("|"):
+            # 跳过表格分隔行（|------|----------|）
+            if re.fullmatch(r"\|[\s:\-|]+\|", line):
+                continue
+            # 表格行：取第二列（标题列）
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) < 2:
+                continue
+            first, second = cells[0], cells[1]
+            # 跳过表头与分隔行
+            if first in ("#", "序号", "排名", "编号") or re.fullmatch(r":?-+:?", first):
+                continue
+            if second in ("标题", "") or re.fullmatch(r":?-+:?", second):
+                continue
+            t = second
+        else:
+            # 分节列表格式：跳过小节标题（### xxx）与普通描述行
+            if line.startswith("#"):
+                continue
+            if re.match(r"^[#>\-*]\s", line) or line.startswith((">", "```")):
+                continue
+            t = re.sub(r"^(\d+[\.、]|[-*])\s*", "", line)
+            # 跳过非标题行（不含任何中文字符且不以数字开头的内容）
+            if not re.search(r"[\u4e00-\u9fff]", t):
+                continue
+        t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)  # 去 markdown 链接保留文字
+        # 去候选标注（[大纲种子] [知识库公式] 等）
+        t = re.sub(r"\s*\[[^\]]*\]\s*$", "", t)
+        t = t.strip().strip("*`").strip()
+        if t and t not in titles:
+            titles.append(t)
+    return titles
+
+
+def check_title_candidate_count(path: Path, min_count: int) -> list:
+    """候选池数量门禁（2026-08-16 新增，对齐 skill Step 3 "12-18 个"）。
+
+    背景：skill 要求生成 12-18 个候选，但旧校验只查"候选池章节存在"（TITLE_CHECKS 候选池项），
+    抽查 2026-08-15 产出发现候选池仅 10 个仍通过校验——规范与校验脱节。
+    修正：实测候选池标题数量，少于底线即 ❌（不依赖模型自查，代码硬校验）。
+    注意：快讯评点体候选空间小，由调用方传 min_count=8。"""
+    issues = []
+    titles = extract_title_candidates(path)
+    n = len(titles)
+    if n < min_count:
+        issues.append(
+            f"  ❌ 标题候选池数量不足: 实测 {n} 个 < {min_count} 个"
+            f"（deai-title Step 3 要求 12-18 个；快讯评点体 ≥8）——"
+            f"候选池是六维评分的输入，数量不足会压缩 Top 选择空间，必须补齐")
+    return issues
+
+
+def check_platform_title_trace(path: Path) -> list:
+    """平台适配标题溯源门禁（2026-08-16 新增，deai-title 优化研究报告 P0）。
+
+    背景：抽查 2026-08-15「存储荒警报」标题方案发现——CSDN 首选标题
+    「存储荒是真的吗？拆解涨价传导链」不在候选池 10 个标题中，是平台适配环节
+    临时新造的，未经过六维评分。绕过评分的标题可能 AI 味超标/字数违规/与内容不符。
+
+    门禁规则：平台适配章节表格中每个平台的标题列，必须能在候选池中找到。
+    兼容两种表格格式：
+    A. v2.2 规范格式：| 平台 | 首选标题 | 备选标题 |（两列标题都要检查）
+    B. v2.1 实际格式：| 平台 | 推荐标题 | 理由 |（推荐标题检查，理由列不检查）
+    标题单元格兼容 #N 编号引用（"#2 标题"、"Top 1 标题"、"#5"、"（同微信标题）"
+    等历史写法）——先尝试定位候选池对应编号标题，定位成功即视为可溯源。
+    """
+    issues = []
+    candidates = extract_title_candidates(path)
+    if not candidates:
+        return issues  # 候选池为空由 check_title_candidate_count 兜底
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    m = re.search(r"^#{2,4}\s*.*平台适配.*$", text, re.MULTILINE)
+    if not m:
+        return issues  # 章节缺失由 check_section 兜底
+    start = m.end()
+    # 边界：下一个 H2（## 后不跟 #），避免 ### 小节标题截断
+    nxt = re.search(r"^##(?!#)\s+", text[start:], re.MULTILINE)
+    seg = text[start: start + nxt.start()] if nxt else text[start:]
+    lines = [ln.strip() for ln in seg.split("\n") if ln.strip()]
+    # 识别表头列含义：第二/三列表头名决定哪些列是标题列
+    col_is_title = [False, False, False]
+    for ln in lines:
+        if not ln.startswith("|"):
+            continue
+        if re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) >= 3 and cells[0] in ("平台", "序号", "排名", "平台名称"):
+            for idx, h in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+                if h in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                    col_is_title[idx] = True
+            break
+    # 若未识别到标准表头（历史异常格式），默认检查第 2 列（col 1）
+    if not any(col_is_title):
+        col_is_title[1] = True
+    for ln in lines:
+        if not ln.startswith("|"):
+            continue
+        if re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        platform = cells[0]
+        if platform in ("平台", "序号", "排名", "平台名称") or not platform:
+            continue
+        for idx, cell in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+            if not col_is_title[idx] or not cell:
+                continue
+            if cell in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                continue
+            t_clean = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", cell).strip()
+            # 提取 #N / Top N / ① 编号引用 → 直接定位候选池对应编号
+            num = None
+            mm = re.match(r"^(?:#|Top\s*|top\s*|第)?\s*(\d{1,3})\s*[#、.．:：)]?", t_clean)
+            if mm:
+                num = int(mm.group(1))
+            if num and 1 <= num <= len(candidates):
+                continue  # 编号引用候选池对应标题，视为可溯源
+            # 无编号：与候选池逐条比对（允许平台化微调，阈值 0.90）
+            t_clean = t_clean.strip().strip('"\'“”‘’「」『』*`').strip()
+            if not t_clean or t_clean in ("（同微信标题）", "同微信标题", "同头条标题"):
+                continue
+            best = 0.0
+            for c in candidates:
+                s = text_similarity(t_clean, c)
+                if s > best:
+                    best = s
+            if best < TITLE_TRACE_SIMILARITY:
+                issues.append(
+                    f"  ❌ 平台适配标题未在候选池: {platform} 标题「{t_clean}」"
+                    f"（与候选池最高相似度 {best:.0%} < {TITLE_TRACE_SIMILARITY:.0%}）"
+                    f"——平台标题必须从候选池 Top5 中选取，禁止平台适配环节新造标题"
+                    f"（新造标题未经过六维评分，AI 味/字数/内容一致性均无保障）")
+    return issues
+
+
+def check_platform_title_length(path: Path) -> list:
+    """平台标题字数合规门禁（2026-08-16 新增，对应 deai-title v2.2 Step 5 平台字数表）。
+
+    背景：skill 全局约束"每个标题 ≤30 字"一刀切，不适用于小红书（硬上限 20 字）
+    与视频号（8-15 字）；平台适配后超限会在移动端截断，关键信息丢失。
+    数据来源：2025-2026 各平台标题规范交叉验证（小红书 10-20/头条 18-25/公众号 15-25 等）。
+
+    检查方式：平台适配表格中每个平台行的标题，中文字符数必须在 PLATFORM_TITLE_LEN
+    对应区间内（平台名含"小红书"等关键词匹配；v2.1 的"推荐标题+理由"三列格式只查
+    推荐标题列——理由列本来就是说明文字，不查）。"""
+    issues = []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    m = re.search(r"^#{2,4}\s*.*平台适配.*$", text, re.MULTILINE)
+    if not m:
+        return issues  # 章节缺失由 check_section 兜底
+    start = m.end()
+    nxt = re.search(r"^##(?!#)\s+", text[start:], re.MULTILINE)
+    seg = text[start: start + nxt.start()] if nxt else text[start:]
+    lines = [ln.strip() for ln in seg.split("\n") if ln.strip()]
+    col_is_title = [False, False, False]
+    for ln in lines:
+        if not ln.startswith("|") or re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) >= 2 and cells[0] in ("平台", "序号", "排名", "平台名称"):
+            for idx, h in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+                if h in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                    col_is_title[idx] = True
+            break
+    if not any(col_is_title):
+        col_is_title[1] = True
+    for ln in lines:
+        if not ln.startswith("|") or re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        platform = cells[0]
+        if platform in ("平台", "序号", "排名", "平台名称") or not platform:
+            continue
+        # 定位平台对应字数区间（按关键词匹配：公众号/微信、小红书、视频号等）
+        plen = None
+        for pk, (lo, hi) in PLATFORM_TITLE_LEN.items():
+            if pk in platform or platform in pk:
+                plen = (lo, hi)
+                break
+        if not plen:
+            continue  # 未识别平台（如"CSDN/掘金"含 CSDN 可识别；未知平台跳过）
+        for idx, cell in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+            if not col_is_title[idx] or not cell:
+                continue
+            if cell in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                continue
+            t_clean = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", cell)
+            t_clean = t_clean.strip().strip("*`\"'“”‘’「」『』").strip()
+            if not t_clean or t_clean.startswith("#") and re.match(r"^#?\d+", t_clean):
+                continue  # #N 编号引用不是实际标题，跳过
+            if t_clean in ("（同微信标题）", "同微信标题", "同头条标题"):
+                continue
+            n = len(re.findall(r"[\u4e00-\u9fffA-Za-z0-9]", t_clean))
+            lo, hi = plen
+            if n > hi:
+                issues.append(
+                    f"  ❌ 平台标题超字数: {platform} 标题「{t_clean}」{n} 字"
+                    f" > {hi} 字（{pk} 移动端展示上限）——超限会截断丢失信息，"
+                    f"须按 deai-title Step 5 平台字数收缩规则压缩（删虚词/换语序/换更短候选）")
+            elif n < lo:
+                issues.append(
+                    f"  ⚠️ 平台标题过短: {platform} 标题「{t_clean}」{n} 字"
+                    f" < {lo} 字（{pk} 建议下限）——信息密度不足，降低点击动机")
+    return issues
+
+
+PLATFORM_TITLE_SIM = 0.85  # 平台标题两两相似度 ≥85% → 标题未差异化（2026-08-18 新增）
+
+
+def check_platform_title_diversity(platform_files: list, final_file=None) -> list:
+    """平台标题差异化门禁（2026-08-18 新增，教训固化）。
+
+    背景：用户复核发现各平台版本文章标题高度雷同（母稿标题被多个平台整体复用），
+    导致读者/算法判定为"同文多平台转载"，损害各平台原创权重与单位点击效率。
+    根因：adapt 阶段回退到"排名第 1 标题"，且 deai-title 平台适配常共用同一候选。
+
+    门禁：同一选题目录下各平台稿标题必须互不相同（相似度 < 阈值），且不得与母稿
+    终稿标题完全相同（相似度 < 阈值）。差异化通过"换候选名次 + 平台化改造"实现，
+    不得删改正文保真（各平台正文保真比例由 PLATFORM_MIN_RATIO 门禁另行校验）。
+    """
+    issues = []
+    if not platform_files:
+        return issues
+    titles = {}  # filename -> title
+    for pf in platform_files:
+        pf_text = pf.read_text(encoding="utf-8", errors="ignore")
+        try:
+            fm, _ = parse_yaml_frontmatter(pf_text)
+        except Exception:
+            fm = {}
+        title = (fm.get("title") or "").strip()
+        # 优先取 frontmatter 之后第一个 H1（真实展示标题）；frontmatter title 若含
+        # "平台前缀-..."（如"CSDN-xxx"）则不视为真实标题，回退取 H1。
+        h1 = re.search(r"^#\s+(.+)$", pf_text, re.MULTILINE)
+        h1_title = h1.group(1).strip() if h1 else ""
+        if h1_title and (not title or title.startswith("CSDN-") or title.startswith("知乎-")
+                         or title.startswith("微信-") or title.startswith("百家号-")
+                         or title.startswith("头条-") or title.startswith("小红书-")
+                         or title.startswith("视频号-")):
+            title = h1_title
+        titles[pf.name] = title
+
+    named = {n: t for n, t in titles.items() if t}
+
+    # 平台标题与母稿终稿标题判重（禁止整体复用母稿标题）
+    if final_file is not None and final_file.exists():
+        ftext = final_file.read_text(encoding="utf-8", errors="ignore")
+        try:
+            f_fm, _ = parse_yaml_frontmatter(ftext)
+        except Exception:
+            f_fm = {}
+        final_title = (f_fm.get("title") or "").strip()
+        if final_title:
+            for name, t in named.items():
+                s = text_similarity(t, final_title)
+                if s >= PLATFORM_TITLE_SIM:
+                    issues.append(
+                        f"  ❌ 平台标题与母稿雷同（相似度 {s:.0%} ≥ {PLATFORM_TITLE_SIM:.0%}）："
+                        f"{name} 标题「{t}」与终稿标题「{final_title}」一致——必须按平台类型"
+                        f"差异化改造（知乎提问式 / 公众号\"我\"叙事 / 头条数字冲突 / 百家号搜索词 / CSDN方法论）")
+
+    # 平台标题两两判重（禁止各平台整体复用同一标题）
+    names = sorted(named)
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = names[i], names[j]
+            s = text_similarity(named[a], named[b])
+            if s >= PLATFORM_TITLE_SIM:
+                issues.append(
+                    f"  ❌ 平台标题高度雷同（相似度 {s:.0%} ≥ {PLATFORM_TITLE_SIM:.0%}）："
+                    f"{a}「{named[a]}」vs {b}「{named[b]}」——各平台必须依据平台特点选用"
+                    f"差异化标题（不同候选名次 + 平台化改造），禁止整体复用同一标题")
+    return issues
+
+
 def check_clickable_link(path: Path) -> list:
     """知乎版：source_url 非空时必须含 Clickable Link"""
     issues = []
@@ -553,6 +908,26 @@ def main():
             if title_f.exists():
                 issues = check_yaml_required(title_f, ["type", "date", "topic", "model"])
                 issues += check_section(title_f, ["候选池", "评分表", "平台适配"], "标题方案必填章节")
+                # 新检查生效门槛（2026-08-16）：候选池数量/平台标题溯源是 deai-title v2.2 规范，
+                # 对 v2.2 之前的历史产出不强制（旧版允许平台标题=候选池改写，溯源必大量误报）。
+                _tfm, _ = parse_yaml_frontmatter(title_f.read_text(encoding="utf-8", errors="ignore"))
+                _tdate = (_tfm.get("date") or "").strip()
+                _v22 = _tdate >= TITLE_V22_EFFECTIVE_DATE if _tdate else False
+                if _v22:
+                    # 候选池数量门禁（2026-08-16 新增）：对齐 skill Step 3 "12-18 个"；
+                    # 快讯评点体候选空间小，底线降至 8。体裁从大纲 frontmatter 读取。
+                    title_genre = "深度分析体"
+                    if outline.exists():
+                        _ot = outline.read_text(encoding="utf-8", errors="ignore")
+                        _ofm, _ = parse_yaml_frontmatter(_ot)
+                        title_genre = (_ofm.get("genre") or "深度分析体").strip() or "深度分析体"
+                    tmin = TITLE_CANDIDATE_MIN_BREAKING_NEWS if title_genre == "快讯评点体" else TITLE_CANDIDATE_MIN
+                    issues += check_title_candidate_count(title_f, tmin)
+                    # 平台适配标题溯源门禁（2026-08-16 新增）：平台标题必须来自候选池 Top5，
+                    # 禁止平台适配环节新造标题（绕过六维评分）。
+                    issues += check_platform_title_trace(title_f)
+                    # 平台标题字数合规门禁（2026-08-16 新增）：平台适配后标题须落在平台字数区间。
+                    issues += check_platform_title_length(title_f)
                 dir_issues += issues
 
             # 草稿 + 润色稿 + 去AI化报告
@@ -704,6 +1079,10 @@ def main():
                             f"  ❌ 平台版高度雷同（相似度 {sim:.0%} ≥ {COMPLIANCE_SIMILAR_PLATFORMS:.0%}）："
                             f"{a} vs {b}——两平台版必须差异化改写（结构/语气/案例/引导不同），"
                             f"禁止同文复制（非真人自动化创作风险）")
+
+            # 平台标题差异化门禁（2026-08-18 新增）：各平台稿标题须互不相同且不同于母稿标题
+            dir_issues += check_platform_title_diversity(platform_files,
+                                                          final_refs[0] if final_refs else None)
 
             if dir_issues:
                 report.append(dir_label)
