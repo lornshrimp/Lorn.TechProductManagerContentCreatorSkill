@@ -799,6 +799,40 @@ def check_content(path: Path, keywords: list, desc: str) -> list:
     return issues
 
 
+# 去AI化报告结构门禁生效门槛（2026-08-25 用户复核确立）：
+# 2026-08-09/13 等早前去AI化流程曾因简化报告（仅"检测维度/处理概览"几节）而漏检，
+# 对照 2026-07-21~08-01 期间的完整 8 节报告模板（统计对抗/子技能记录/修改记录/未修改项/
+# 字数变动监控/stop-slop 评分/三条铁律/附录原则自检）固化必填块。历史目录不强制，
+# 生效日起的产出缺块即 ❌（防止执行层用"空壳报告"冒充真实去AI化）。
+QAIHUA_REPORT_EFFECTIVE = "2026-08-25"
+
+
+def check_qaihua_report(path: Path) -> list:
+    """去AI化报告结构门禁（2026-08-25 新增）：
+    报告必须为 deai-polish Output 模板的完整结构（统计对抗/修改记录/未修改项/
+    字数监控/三条铁律/stop-slop 评分/子技能执行记录）；
+    仅"检测维度与结果/处理概览/结论"式简版报告 = 未真实执行去AI化全流程 → ❌。
+    章节名容忍异名（同源关键词组中任一命中即算存在）。"""
+    issues = []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    required_blocks = [
+        (["统计对抗"], "统计对抗结果表（处理前/后数字化对比）"),
+        (["修改记录"], "修改记录表（位置/类型/修改前/修改后/原因逐条）"),
+        (["未修改项"], "未修改项（刻意保留清单）"),
+        (["字数变动", "字数监控"], "字数变动监控（去字率 ≤5% / 金句留存率）"),
+        (["铁律"], "三条铁律终审（体感/节奏/取舍）"),
+        (["stop-slop", "5 维评分", "五维评分"], "stop-slop 5 维评分表"),
+        (["子技能执行记录", "humanizer", "shuorenhua"], "子技能执行记录（humanizer-zh/stop-slop/taste/shuorenhua）"),
+    ]
+    missing = [desc for kws, desc in required_blocks if not any(kw in text for kw in kws)]
+    if missing:
+        issues.append("  ❌ 去AI化报告结构不完整：缺少「" + " / ".join(missing) + "」——"
+                      "按 deai-polish SKILL Output 模板（统计对抗/子技能记录/修改记录/未修改项/"
+                      "字数变动监控/stop-slop 评分/三条铁律）补全；结构缺失 = 未真实执行去AI化全流程"
+                      "（2026-08-25 门禁，禁止用简版空壳报告代替）")
+    return issues
+
+
 def find_project_root() -> Path:
     """定位项目根目录：从脚本位置向上查找包含 hotspot/ 与 drafts/ 的目录。
     2026-08-08 修复：原 `Path(__file__).resolve().parent.parent` 解析到 .workbuddy 目录
@@ -940,8 +974,17 @@ def main():
             polish_files = list(d.glob("润色稿-*.md"))
             if not polish_files:
                 dir_issues.append("  ❌ 缺少「润色稿-*.md」（deai-polish 必产出）")
-            if not list(d.glob("去AI化报告-*.md")):
+            qaihua_files = list(d.glob("去AI化报告-*.md"))
+            if not qaihua_files:
                 dir_issues.append("  ❌ 缺少「去AI化报告-*.md」（deai-polish 必产出）")
+            else:
+                # 去AI化报告结构门禁（2026-08-25 新增）：仅"成对存在"不足以保证流程真实执行——
+                # 报告必须含完整 8 块模板；生效日起缺块即 ❌（防止执行层用简版报告冒充去AI化）。
+                for qf in qaihua_files:
+                    _qtfm, _ = parse_yaml_frontmatter(qf.read_text(encoding="utf-8", errors="ignore"))
+                    _qdate = (_qtfm.get("date") or "").strip()
+                    if _qdate and _qdate >= QAIHUA_REPORT_EFFECTIVE:
+                        dir_issues += check_qaihua_report(qf)
 
             # 终稿 + 编辑终审签报
             if not list(d.glob("终稿-*.md")):
