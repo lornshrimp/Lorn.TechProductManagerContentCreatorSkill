@@ -345,6 +345,49 @@ def _raw_body(path: Path) -> str:
     return text[:cut]
 
 
+BODY_STRUCTURE_H2_MIN = {
+    "知乎-": 4, "微信-": 4, "百家号-": 3, "CSDN-": 4, "头条-": 3, "终稿-": 4,
+}
+
+
+def check_body_structure(path: Path, label: str) -> list:
+    """正文结构门禁（2026-08-27 新增，教训固化）：
+    平台稿/终稿正文必须有小标题（H2）且无超长段落。
+    背景：08-25 起正文小标题退化、08-27 微信/知乎/终稿正文零小标题、段落 400-550 字成坨——
+    adapt 规范本就要求"结构化小标题 + 无连续>6行段落"，但校验无此项门禁导致执行退化静默通过。"""
+    issues = []
+    c = path.read_text(encoding="utf-8", errors="ignore")
+    start = 0
+    if c.startswith("---"):
+        e = c.find("\n---", 3)
+        start = e + 4 if e != -1 else 0
+    m = re.search(r"^# .*$", c[start:], re.MULTILINE)
+    if m:
+        start += m.end()
+    tail = re.search(
+        r"\n# 附属内容区域|\n## 配图详情|\n## 素材溯源|\n## 标题决策说明|"
+        r"\n## 质量自检报告|\n## 互动引导|\n## 配图搜索替换指令", c[start:])
+    end = start + tail.start() if tail else len(c)
+    body = c[start:end]
+    h2 = len(re.findall(r"^## ", body, re.MULTILINE))
+    min_h2 = BODY_STRUCTURE_H2_MIN.get(label, 4)
+    if h2 < min_h2:
+        issues.append(
+            f"  ❌ 正文小标题不足: {path.name} 正文 H2 仅 {h2} 个 < {min_h2}"
+            f"（长文必须加小标题分段，禁止一大坨无标题正文）")
+    skip_prefixes = ("#", "|", ">", "-", "*", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "[", "```")
+    for blk in re.split(r"\n\s*\n", body):
+        b = blk.strip()
+        if not b or b.startswith(skip_prefixes):
+            continue
+        cn = len(re.findall(r"[\u4e00-\u9fff]", b))
+        if cn > 300:
+            issues.append(
+                f"  ❌ 超长段落: {path.name} 有 {cn} 字段落（>300 字，需在逻辑转折处拆分；"
+                f"微信规范要求无连续>6行段落）")
+    return issues
+
+
 def check_platform_coherence(path: Path, final_path: Path) -> list:
     """平台稿正文连贯性门禁（2026-08-13 新增，当日两轮修订至最终语义）。
 
@@ -586,6 +629,17 @@ def check_platform_title_trace(path: Path) -> list:
             continue
         platform = cells[0]
         if platform in ("平台", "序号", "排名", "平台名称") or not platform:
+            continue
+        # 整行含 #N 候选池引用（如来源/选定策略列"#2改编"）→ 视为可溯源
+        has_ref = False
+        for c in cells:
+            mm = re.search(r"#(\d{1,3})", c)
+            if mm:
+                num = int(mm.group(1))
+                if 1 <= num <= len(candidates):
+                    has_ref = True
+                    break
+        if has_ref:
             continue
         for idx, cell in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
             if not col_is_title[idx] or not cell:
@@ -1010,6 +1064,8 @@ def main():
             min_words = GENRE_MIN_WORDS.get(genre, 2500)
             for wf in (sorted(d.glob("草稿-*.md")) + sorted(d.glob("润色稿-*.md"))
                        + sorted(d.glob("终稿-*.md"))):
+                if wf.name.startswith("终稿-") and d.parent.name >= "2026-08-27":
+                    dir_issues += check_body_structure(wf, "终稿-")
                 n = count_body_chars(wf)
                 if n < min_words:
                     dir_issues.append(
@@ -1026,6 +1082,11 @@ def main():
 
             for pf in sorted(platform_files):
                 issues = check_yaml_required(pf, PLATFORM_YAML_KEYS)
+
+                # 正文结构门禁（2026-08-27 新增，生效日起）：小标题 ≥ 阈值 + 无超长段落
+                if d.parent.name >= "2026-08-27":
+                    pfx_label = next((p for p in BODY_STRUCTURE_H2_MIN if pf.name.startswith(p)), "平台")
+                    issues += check_body_structure(pf, pfx_label)
 
                 # 合规：平台稿与终稿相似度（2026-08-11 新增）
                 # 背景：平台稿 = 终稿的平台化改写；若与终稿高度雷同（≥99%）说明未做平台化改写，
