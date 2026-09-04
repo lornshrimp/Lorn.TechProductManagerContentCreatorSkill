@@ -97,6 +97,11 @@ TITLE_TRACE_SIMILARITY = 0.90
 # （v2.2 前历史产出按旧规范执行——平台标题=候选池改写，溯源检查会大量误报，不强制）
 TITLE_V22_EFFECTIVE_DATE = "2026-08-16"
 
+# 选题卡历史撞车检测门禁（deai-topic Step 2.5，2026-09-01 新增）：
+# 该日期及之后的选题卡，每个推荐选题详析的「基本盘」必须含「历史去重检测」行
+# （🔴撞车剔除 / 🟡深化 / 🟢扩展 + 差异化增量）。2026-09-01 前历史选题卡无此行，不强制。
+TOPIC_DEDUP_EFFECTIVE_DATE = "2026-09-01"
+
 # 平台标题字数合规区间（2026-08-16 新增，对应 deai-title v2.2 Step 5 平台字数表）：
 # 平台适配后的标题字数必须落在平台区间内（超限在移动端截断=信息丢失）。
 # 数据来源：2025-2026 各平台标题规范交叉验证（skill Step 5 已固化）。
@@ -947,6 +952,18 @@ def main():
         for f in sorted(topic_dir.glob(f"{date}-选题卡.md")):
             issues = check_yaml_required(f, REQUIRED_YAML_KEYS["hotspot/选题"])
             issues += check_section(f, ["评分总览"], "选题评分表")
+            # 历史选题撞车检测门禁（deai-topic Step 2.5，2026-09-01 生效）：
+            # 每个推荐选题详析（### 选题X）的基本盘必须含「历史去重检测」行。
+            # 仅对生效日及之后的选题卡强制；同日选题卡缺行即 ❌（回补后再跑）。
+            if date >= TOPIC_DEDUP_EFFECTIVE_DATE:
+                text = f.read_text(encoding="utf-8", errors="ignore")
+                n_topics = len(re.findall(r"^###\s+选题[一二三四五六七八九十百]", text, re.MULTILINE))
+                n_dedup = text.count("历史去重检测")
+                if n_topics and n_dedup < n_topics:
+                    issues.append(
+                        f"  ❌ 选题详析须逐题标注「历史去重检测」（deai-topic Step 2.5 硬门禁："
+                        f"{n_topics} 个推荐选题详析仅 {n_dedup} 处标注，🔴撞车剔除/🟡深化/🟢扩展+差异化增量）"
+                    )
             if issues:
                 report.append(f"\n[选题卡] {f.name}")
                 report += issues
