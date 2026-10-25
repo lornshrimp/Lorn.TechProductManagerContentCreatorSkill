@@ -1,0 +1,158 @@
+{
+ "社银贷这本账": {
+  "final_chars": 2790,
+  "draft_chars": 2940,
+  "polish_chars": 2743,
+  "diff_draft_polish": 0.1263,
+  "rows": [
+   {
+    "platform": "知乎",
+    "chars": 2574,
+    "ratio": 0.9226,
+    "sim_final": 0.523,
+    "anchors": []
+   },
+   {
+    "platform": "微信",
+    "chars": 2463,
+    "ratio": 0.8828,
+    "sim_final": 0.4575,
+    "anchors": []
+   },
+   {
+    "platform": "百家号",
+    "chars": 2092,
+    "ratio": 0.7498,
+    "sim_final": 0.3499,
+    "anchors": []
+   },
+   {
+    "platform": "CSDN",
+    "chars": 2265,
+    "ratio": 0.8118,
+    "sim_final": 0.1651,
+    "anchors": []
+   },
+   {
+    "platform": "头条",
+    "chars": 1962,
+    "ratio": 0.7032,
+    "sim_final": 0.4246,
+    "anchors": []
+   }
+  ],
+  "worst_pairwise": 0.5221,
+  "worst_pair": "微信×头条",
+  "fig_count": {
+   "知乎": 3,
+   "微信": 3,
+   "百家号": 3,
+   "CSDN": 4,
+   "头条": 3
+  }
+ },
+ "投诉工单这本账": {
+  "final_chars": 2571,
+  "draft_chars": 2721,
+  "polish_chars": 2542,
+  "diff_draft_polish": 0.1182,
+  "rows": [
+   {
+    "platform": "知乎",
+    "chars": 2591,
+    "ratio": 1.0078,
+    "sim_final": 0.4316,
+    "anchors": []
+   },
+   {
+    "platform": "微信",
+    "chars": 2218,
+    "ratio": 0.8627,
+    "sim_final": 0.5313,
+    "anchors": []
+   },
+   {
+    "platform": "百家号",
+    "chars": 1987,
+    "ratio": 0.7729,
+    "sim_final": 0.3379,
+    "anchors": []
+   },
+   {
+    "platform": "CSDN",
+    "chars": 2110,
+    "ratio": 0.8207,
+    "sim_final": 0.1524,
+    "anchors": []
+   },
+   {
+    "platform": "头条",
+    "chars": 1959,
+    "ratio": 0.762,
+    "sim_final": 0.5309,
+    "anchors": []
+   }
+  ],
+  "worst_pairwise": 0.5651,
+  "worst_pair": "微信×头条",
+  "fig_count": {
+   "知乎": 3,
+   "微信": 3,
+   "百家号": 3,
+   "CSDN": 4,
+   "头条": 3
+  }
+ },
+ "镜片价差这本账": {
+  "final_chars": 3174,
+  "draft_chars": 3023,
+  "polish_chars": 3142,
+  "diff_draft_polish": 0.0824,
+  "rows": [
+   {
+    "platform": "知乎",
+    "chars": 2893,
+    "ratio": 0.9115,
+    "sim_final": 0.4465,
+    "anchors": []
+   },
+   {
+    "platform": "微信",
+    "chars": 2703,
+    "ratio": 0.8516,
+    "sim_final": 0.4375,
+    "anchors": []
+   },
+   {
+    "platform": "百家号",
+    "chars": 2258,
+    "ratio": 0.7114,
+    "sim_final": 0.3281,
+    "anchors": []
+   },
+   {
+    "platform": "CSDN",
+    "chars": 2303,
+    "ratio": 0.7256,
+    "sim_final": 0.2365,
+    "anchors": []
+   },
+   {
+    "platform": "头条",
+    "chars": 2241,
+    "ratio": 0.706,
+    "sim_final": 0.5861,
+    "anchors": []
+   }
+  ],
+  "worst_pairwise": 0.6716,
+  "worst_pair": "知乎×百家号",
+  "fig_count": {
+   "知乎": 3,
+   "微信": 3,
+   "百家号": 3,
+   "CSDN": 4,
+   "头条": 3
+  }
+ }
+}

@@ -1,0 +1,105 @@
+====================================================================
+字段定义: research\车市价格带断裂-购车能力退出\fields.yaml
+定义字段数: 31  (必填 0)
+待校验文件: 32
+====================================================================
+
+[OK  ] item_A1.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A2.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A3.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A4.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A5.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A6.json  覆盖 31/31 (100.0%)  uncertain=3
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A7.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_A8.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_B1.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_B2.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_B3.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_B4.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_B5.json  覆盖 31/31 (100.0%)  uncertain=6
+    额外字段: group, id, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_C1.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: 2025补贴, 2025补贴/车价, 2026补贴, 2026补贴/车价, group, id, priority, regressivity_summary, 交叉验证, 作者观点对齐, 写作可用性, 基本信息
+
+[OK  ] item_C2.json  覆盖 31/31 (100.0%)  uncertain=6
+    额外字段: 2025实缴购置税, 2026实缴购置税, group, id, priority, regressivity_summary, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 多支出, 多支出/车价
+
+[OK  ] item_C3.json  覆盖 31/31 (100.0%)  uncertain=7
+    额外字段: group, id, policy_overdraft_application, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_C4.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: 2025补贴元, 2025补贴占车价比值, 2026是否触发封顶, 2026补贴元, 2026补贴占车价比值, 交叉验证, 作者观点对齐, 写作可用性, 变动幅度, 基本信息, 情形, 支付能力判别
+
+[OK  ] item_C5.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 时点, 机制
+
+[OK  ] item_C6.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 时点, 节点
+
+[OK  ] item_D1.json  覆盖 31/31 (100.0%)  uncertain=7
+    额外字段: 交叉验证, 作者观点对齐, 写作可用性, 口径, 基本信息, 备注, 支付能力判别, 数值, 数据, 方法论, 时点
+
+[OK  ] item_D2.json  覆盖 31/31 (100.0%)  uncertain=6
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_D3.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_D4.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_D5.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, priority, title, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_D6.json  覆盖 31/31 (100.0%)  uncertain=4
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_E1.json  覆盖 31/31 (100.0%)  uncertain=7
+    额外字段: group, id, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 证据角色
+
+[OK  ] item_E2.json  覆盖 31/31 (100.0%)  uncertain=7
+    额外字段: group, id, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 证据角色
+
+[OK  ] item_E3.json  覆盖 31/31 (100.0%)  uncertain=7
+    额外字段: group, id, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 证据角色
+
+[OK  ] item_E4.json  覆盖 31/31 (100.0%)  uncertain=9
+    额外字段: group, id, overdraft_vs_income, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 证据角色
+
+[OK  ] item_E5.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_E6.json  覆盖 31/31 (100.0%)  uncertain=5
+    额外字段: group, id, name, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论
+
+[OK  ] item_E7.json  覆盖 31/31 (100.0%)  uncertain=10
+    额外字段: group, id, overdraft_vs_income, priority, 交叉验证, 作者观点对齐, 写作可用性, 基本信息, 支付能力判别, 数据, 方法论, 证据角色
+
+====================================================================
+汇总: 通过 32/32
+====================================================================

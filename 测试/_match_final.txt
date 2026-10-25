@@ -1,0 +1,47 @@
+========================================================================
+知乎推荐问题.md
+  OK   #1 苹果现在才做折叠屏，是来得太晚，还是正好等到了技术成熟？  -> https://www.zhihu.com/question/2076754620832135160
+  OK   #2 Anthropic 掌门人呼吁放缓 AI 模型迭代，马斯克、奥尔特曼响应，此  -> https://www.zhihu.com/question/2082326195320918583
+  MISS #3 如何看待「80% 的 AI 创业公司都在用中国开源模型」的现象？
+  OK   #4 「地方附加税法」征求意见稿出台，实行 11%-13% 幅度税率，这一新税种对  -> https://www.zhihu.com/question/2076724095819964981
+  OK   #5 付航脱口秀黄牛票无法实名入场，警方通报 3 人被采取刑事强制措施，3 人被行  -> https://www.zhihu.com/question/2082575744471757870
+  OK   #6 Anthropic一研究员辞职示警称AI可能在未来十年内毁灭人类，巨头拿人类  -> https://www.zhihu.com/question/2081735347436778562
+  OK   #7 怎么看待美国太空军发现中国遥感五十02卫星掉出43块碎片？  -> https://www.zhihu.com/question/2082255427853727626
+  OK   #8 iPhone Duo会大幅打压华为Mate XT2的销量吗？  -> https://www.zhihu.com/question/2082200032460251172
+  MISS #9 如何评价当前的 AI Agent 落地效果普遍不佳的问题？
+  OK   #10 苹果多款老机型涨价，iPhone 17 涨价 800 元，为什么新机发布，旧  -> https://www.zhihu.com/question/2081313765153420462
+  OK   #11 从星宇批量解雇应届生到瑞浦兰钧致员工崩溃裸奔，为什么这些企业非要把人逼到崩溃  -> https://www.zhihu.com/question/2081481230709519943
+  OK   #12 为什么体制内至今仍不鼓励用人工智能？  -> https://www.zhihu.com/question/2042649810709239000
+  OK   #13 内存条什么时候降价?  -> https://www.zhihu.com/question/1970918703458653927
+  OK   #14 赛力斯中报巨亏，问界 M6 走量预期落空，如何评价华为智选车模式？  -> https://www.zhihu.com/question/2074228962302093110
+  OK   #15 维密一员工称请假陪患癌母亲做手术遭拒，提出辞职领导却马上批准，如何看待此事？  -> https://www.zhihu.com/question/2081103869552211650
+  OK   #16 传闻苹果首款折叠屏手机命名为iPhone Duo，如何评价这样的命名，其他手  -> https://www.zhihu.com/question/2081071747177112418
+  OK   #17 大模型开源会不会变成给闭源做嫁衣?  -> https://www.zhihu.com/question/2031353959949006659
+  MISS #18 曝 iPhone17 系列国内销量超 4000 万，为何消费者仍青睐苹果？
+  OK   #19 库克承认观察华为等厂商后才出折叠屏，苹果在创新上是否开始「跟随」？  -> https://www.zhihu.com/question/2081683806545785492
+  MISS #20 苹果发布会定档北京时间 9 月 10 日，首款折叠屏 iPhone 将亮相，
+  --> missing 4
+========================================================================
+知乎邀请问题.md
+  OK   #1 怎么看印尼向中国贷款建高铁的钱，还款时间由40年延长到80年到下个世纪？  -> https://www.zhihu.com/question/2082241250988648167
+  OK   #2 如何看待Anthropic、马斯克等顶级 AI 公司呼吁控制前沿 AI 发展  -> https://www.zhihu.com/question/2082571703062721521
+  OK   #3 劳动法落实不到位，是因为条件不成熟还是其他原因？  -> https://www.zhihu.com/question/2076884002825421578
+  OK   #4 机构称iPhone Duo首年有望拿下25%市场份额，晚了三星、华为数年入局  -> https://www.zhihu.com/question/2081335946977469507
+  OK   #5 是什么原因让胖东来独一家，而别的公司学不来？  -> https://www.zhihu.com/question/633102328
+  OK   #6 AI三大巨头联手叫缓人工智能发展，这是技术奇点，还是市场缺钱，如何展望AI经  -> https://www.zhihu.com/question/2082500890263557361
+  OK   #7 陶哲轩、邓煜等菲奖得主联合抗议 AI 公司数学军备竞赛，AI 是否在毁掉数学  -> https://www.zhihu.com/question/2082035913132193247
+  OK   #8 特斯拉无稀土电机 10 秒一台，每台省 1000 美元，其技术原理是什么？将  -> https://www.zhihu.com/question/2081338019919967553
+  OK   #9 如何评价黄文政博士9月1日提出的全民起点收入概念和意义？  -> https://www.zhihu.com/question/2078170323778905700
+  OK   #10 美国 8 月 CPI 同比增长 3.4%，市场预期到年底前美联储将加息两次，  -> https://www.zhihu.com/question/2081457838543597642
+  OK   #11 如何看待25位菲奖得主发布联合声明《AI在数学领域的严重错位》？是否意味着传  -> https://www.zhihu.com/question/2082049593588634390
+  OK   #12 如何看待美国情报机构联合发布报告称DeepSeek、月之暗面等中国6家AI公  -> https://www.zhihu.com/question/2081096508506648911
+  OK   #13 金税四期之下，税务工作者何去何从？  -> https://www.zhihu.com/question/2077331834434860188
+  OK   #14 一个企业如果完全遵守劳动法，会不会因为人力成本太高而倒闭？  -> https://www.zhihu.com/question/2058360156354884634
+  OK   #15 比亚迪被曝「取消年终奖和 13 薪」，这一举动将对员工士气及公司发展带来哪些  -> https://www.zhihu.com/question/2081785930038371559
+  OK   #16 长城汽车 2026 年上半年净利润骤降近六成，是什么原因导致的？  -> https://www.zhihu.com/question/2060421321046205380
+  OK   #17 如果竞对雇人给豆包、DeepSeek 批量喂你的差评，品牌该怎么办？  -> https://www.zhihu.com/question/2079216017570644108
+  MISS #18 当AI参与解雇员工时，最终的决定究竟是谁作出的？
+  MISS #19 高盛称「总是盯着『AI 泡沫』，反而会低估 AI 价值」，这释放了哪些信号？
+  MISS #20 美联储 9 月到底加不加息？
+  --> missing 3
+total scraped unique titles: 100

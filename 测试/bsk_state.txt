@@ -1,0 +1,43 @@
+=== status ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+[1m[33mwarning:[0m 1 browser(s) have protocol version drift from the daemon[0m
+  90d77231 (-) — protocol ext 1.1 vs daemon 1.0 (app ext v0.2.1, daemon v0.1.9) — please align protocol versions
+daemon version      0.1.9
+protocol version    1.0
+pid                 167260
+uptime              4s
+WS port             52800
+sock                \\.\pipe\bsk-daemon-lorns-541cf6cb164bec6f
+browsers connected  1
+active sessions     0
+=== browsers ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+INSTANCE  BROWSER         EXT    LABEL  SESSIONS
+90d77231  edge 154.0.0.0  0.2.1  -      0
+=== session help ===
+Session lifecycle
+
+Usage: bsk.exe session [OPTIONS] <COMMAND>
+
+Commands:
+  start  Start a new session against the (single) connected browser
+  stop   Stop a single session, or all sessions with `--all`
+  list   List active sessions
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+      --json        Emit machine-readable JSON output (when meaningful)
+      --quiet       Suppress informational output
+  -v, --verbose...  Increase log verbosity (`-v` debug, `-vv` trace)
+  -h, --help        Print help
+=== session start help ===
+Start a new session against the (single) connected browser
+
+Usage: bsk.exe session start [OPTIONS]
+
+Options:
+      --browser <BROWSER>  Target browser instance id (only required when multiple browsers are connected)
+      --json               Emit machine-readable JSON output (when meaningful)
+      --quiet              Suppress informational output
+  -v, --verbose...         Increase log verbosity (`-v` debug, `-vv` trace)
+  -h, --help               Print help

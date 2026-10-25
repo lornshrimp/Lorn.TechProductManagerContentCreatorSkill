@@ -1,0 +1,43 @@
+browser-skill — drive your browser from AI agents
+
+Usage: bsk.exe [OPTIONS] <COMMAND>
+
+Commands:
+  daemon               Manage the local `bsk` daemon process
+  status               Show daemon status
+  doctor               Run diagnostics + repair hints
+  install-skill        Install the browser-skill agent skill into local agent harnesses
+  update               Check for and install bsk CLI updates
+  logs                 Print (and optionally follow) the daemon log file
+  session              Session lifecycle
+  browsers             List connected browsers
+  tab                  Tab management commands
+  screenshot           Capture a PNG of the active tab or a snapshot ref element
+  snapshot             Produce an indented aria-snapshot with @eN refs
+  observe              Produce a semantic VOM observation with perception probes
+  console              Read buffered console/log/exception messages
+  network              Read buffered network responses / failures
+  get-html             Dump raw HTML for a tab or a snapshot ref
+  navigate             Navigate the Agent Window's tab to a URL
+  navigate-back        Step back in history one entry
+  navigate-forward     Step forward in history one entry
+  reload               Reload the current tab
+  click                Click a snapshot ref or CSS selector
+  fill                 Fill an input / textarea / contenteditable
+  press                Dispatch a keyboard key combo
+  select               Set `<select>` option values by `value` attribute
+  evaluate             Evaluate a JavaScript expression inside the Agent Window
+  wait-for-navigation  Wait for a page-lifecycle event
+  wait-ms              Sleep for a duration on the daemon side
+  request-help         Ask the human to complete an in-page step (captcha / login / confirm)
+  record               Record user actions into a semantic `trace.json` textbook for LLMs
+  help                 Print this message or the help of the given subcommand(s)
+
+Options:
+      --json        Emit machine-readable JSON output (when meaningful)
+      --quiet       Suppress informational output
+  -v, --verbose...  Increase log verbosity (`-v` debug, `-vv` trace)
+  -h, --help        Print help
+  -V, --version     Print version
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+(no active sessions)

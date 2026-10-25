@@ -1,0 +1,34 @@
+=== NAV RECOMMEND ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waited_ms=4000
+=== URL RECOMMEND ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+=== EVAL RECOMMEND ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+=== NAV INVITED ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waited_ms=4000
+=== URL INVITED ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+=== EVAL INVITED ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped

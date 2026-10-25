@@ -1,0 +1,59 @@
+--- 融合榜单 前25行 ---
+---
+title: 融合热点榜单 · 2026-09-14
+date: 2026-09-14
+collectTime: 2026-09-14 07:35
+sources:
+  - 微博热搜榜
+  - 百度热搜榜
+  - 知乎问题热榜
+  - 知乎推荐问题
+  - 知乎邀请问题
+  - B站热门
+  - 抖音热点
+  - 知微事见
+  - IT之家热榜
+  - 澎湃新闻热榜
+  - 网易新闻热点排行
+  - InfoQ中国热点
+  - 虎嗅48h热文
+  - 品玩一周精选
+  - 知乎想法话题
+  - 百度指数
+  - 小红书热点
+---
+
+## TOP 20 跨平台热点
+
+--- 打卡表 段 ---
+！华为 Mate XT2 性能有多强（极客湾）107.6 万** · 20 三角洲行动 904.7 万 · 31 武汉没订奶学生"站后排喝水"（大象新闻）232.2 万
+
+---
+
+## 19 源采集打卡表
+
+| # | 来源 | 状态 | 通道 | 条数 | 说明 |
+|:--:|------|:--:|:--:|:--:|------|
+| 1 | 微博热搜榜 | ✅ | bsk | 50 | `s.weibo.com/top/summary` 登录态 get-html + Python 正则解析（含热度值 + 新/沸/爆标记） |
+| 2 | 百度热搜榜 | ✅ | urllib | 30+ | `top.baidu.com/api/board?platform=wise&tab=realtime` JSON 直取（SSR 通道，含置顶词条） |
+| 3 | 知乎问题热榜 | ✅ | bsk | 25 | `/hot` 登录态，`.HotItem` 容器一次 evaluate 取「排名+热度+标题+链接」四元组；**落盘前抽查 5 条 `document.title` 全部一致（5/5）** |
+| 4 | 知乎推荐问题 | ✅ | bsk | 20 | `/creator/featured-question/recommend` 登录态快照提取（含"飙升/火爆"标记） |
+| 5 | 知乎邀请问题 | ✅ | bsk | 20 | `/creator/featured-question/invited` 登录态快照提取（含"新问/飙升"标记） |
+| 6 | 头条热榜 | ⚠️ | bsk | 11 | `/hot` 仍 404（改版下线）→ 降级采热点频道 `?channel=hot`，仅取到 11 条词条 |
+| 7 | B站热门 | ✅ | bsk | 32 | `/ranking` 排行榜页 evaluate（`/v/popular/rank/all` 仍被 CDP 拒绝） |
+| 8 | 抖音热点 | ⚠️ | bsk | 24 | `/hot` 页面就绪但热榜模块未在 DOM 渲染（evaluate 两次均只取到推荐流视频），仅首条为政策类热点；已记录为部分降级 |
+| 9 | 百度指数 | ⚠️ | bsk | 6 | v2 首页为登录态 SPA，仅渲染品牌/明星词条，**未渲染搜索指数曲线与完整热词榜**（与 09-11~09-13 一致） |
+| 10 | 知微事见 | ✅ | bsk | 10 | **入口 `ef.zhiweidata.com/library`**（2026-09-09 更新的新地址），navigate ~10s 后 innerText 直取事件列表（事件名+日期+影响力指数+分类） |
+| 11 | IT之家热榜 | ✅ | urllib+bsk | 30 | urllib 直连首页成功（109KB）；bsk 交叉验证一致 |
+| 12 | 澎湃新闻热榜 | ✅ | bsk+urllib | 9 | rank/hotList 已改版 → 采首页；urllib 仅得 16 条静态条目，bsk evaluate 补足 |
+| 13 | 网易新闻热点排行 | ✅ | urllib | 30 | urllib 直连 `news.163.com` 首页成功（292KB），正则提取文章标题 |
+| 14 | InfoQ中国热点 | ✅ | bsk | 5 | urllib 直连返回 HTML 但纯 JS 渲染无正文 → bsk 滚动 + evaluate 提取 |
+| 15 | 虎嗅48h热文 | ✅ | bsk | 27 | urllib 被阿里云 WAF 拦截（15KB 空壳）→ bsk evaluate 提取「24 小时快讯 11 条 + 48 小时热文 16 条」 |
+| 16 | 品玩一周精选 | ✅ | bsk | 10 | urllib 仅得 HTML 骨架，`/a/` 链接为 JS 渲染 → bsk evaluate 提取 |
+| 17 | 知乎想法话题 | ✅ | bsk | 9 | `/creator/creative-inspiration/idea-topics` 登录态 evaluate（12 个推荐话题，去重后 9 个有效） |
+| 18 | 知乎想法热榜 | ❌ | bsk | 0 | `https://www.zhihu.com/pin/hot` 返回 **HTTP 422 Unprocessable Entity**，标题为空、正文无内容；**平台侧下线，连续第 4 日**（09-11 起）；已由"知乎想法话题"源部分覆盖 |
+| 19 | 小红书热点 | ⚠️ | WebSearch | 7 | 无适配器 + 需登录态 → **WebSearch 聚合兜底**（千瓜数据榜单 + 全网转载），未做平台原生榜单核验 |
+
+**通道统计**：bsk 15 源 / urllib 3 源 / WebSearch 1 源；**bsk 会话已 `session stop`（两轮会话 ukju、fulo 均已停止）**。
+
+**降级说明汇总**：❌ 1（知乎想法热榜 422，平台侧下线）；⚠️ 4（头条 /hot 404 改频道页仅 11 条 / 抖音热榜模块未渲染仅取推荐流 / 百度指数仅品牌词条 / 小红书 WebSearch 兜底 7 条）。其余 14 

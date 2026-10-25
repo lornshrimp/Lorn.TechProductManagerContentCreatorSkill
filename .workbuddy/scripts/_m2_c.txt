@@ -1,0 +1,18 @@
+FINAL=2818
+need: zhihu>=2536 wechat>=2395 others>=1972
+知乎: 2725 ratio=96.7% sim_final=79.3%
+微信: 2485 ratio=88.2% sim_final=73.6%
+百家号: 2103 ratio=74.6% sim_final=56.2%
+CSDN: 2012 ratio=71.4% sim_final=27.6%
+头条: 2017 ratio=71.6% sim_final=50.3%
+--- pairwise ---
+知乎x微信: 82.8%
+知乎x百家号: 64.2%
+知乎xCSDN: 34.8%
+知乎x头条: 50.3%
+微信x百家号: 65.7%
+微信xCSDN: 35.1%
+微信x头条: 62.0%
+百家号xCSDN: 38.1%
+百家号x头条: 63.8%
+CSDNx头条: 38.3%

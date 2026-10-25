@@ -1,0 +1,16 @@
+======================================================================
+.workbuddy/skills/deai-hotspot/references/adapter-zhihu-recommend.md EXISTS
+  len 2064
+   去回答: 1
+   链接: 9
+   question: 8
+   补采: 0
+   搜索页: 0
+======================================================================
+.workbuddy/skills/deai-hotspot/references/adapter-zhihu-invited.md EXISTS
+  len 2095
+   去回答: 1
+   链接: 9
+   question: 8
+   补采: 0
+   搜索页: 0

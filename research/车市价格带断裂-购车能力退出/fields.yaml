@@ -1,0 +1,141 @@
+topic: 中国车市价格带断裂与中低收入购车能力退出
+version: 1.0 (Q2B 字段框架：五类基础 + 支付能力判别层 + 作者观点对齐层)
+created: 2026-09-13
+
+# 字段设计原则
+principles:
+  - 每条证据必须可溯源到具名机构与具体时间点，不接受"据报道"
+  - 数值类字段必须标注口径，口径不明者标 uncertain 而非填入猜测值
+  - 跨源数据必须显式标注是否可比（breaks_flag），不可比时禁止并列引用
+  - 均值类指标一律配分布类指标（本调研核心：均值掩盖分化）
+
+fields:
+
+  # ========== 一、基本信息 ==========
+  基本信息:
+    - name: indicator_name
+      description: 指标名称（须用官方或机构原始表述，不得改写）
+      detail_level: 简要
+    - name: source_org
+      description: 来源机构（乘联分会/中汽协/国家统计局/财政部/券商研报/车企官方等）
+      detail_level: 简要
+    - name: publish_date
+      description: 发布时间（精确到月，用于判断时效与是否为同期数据）
+      detail_level: 简要
+    - name: statistical_caliber
+      description: 统计口径（含出口 vs 纯国内、批发 vs 零售、乘用车 vs 商用车、终端价 vs 指导价等）
+      detail_level: 详细
+    - name: series_completeness
+      description: 时间序列完整性——标注是单月/单季/全年/多年连续。本调研要求 2024 至今，点状数据须标出
+      detail_level: 简要
+    - name: band_definition
+      description: 价格带边界定义（乘联"5万以下/5-10万" vs 德勤"30万以上" vs 普查存量口径，同一"低价车"含义不同）
+      detail_level: 简要
+    - name: breaks_flag
+      description: 口径断裂标记——标注该数据是否可跨源比较（例：出口数据中汽协 509.6 万 vs 乘联 428.4 万，差 81 万辆，不可直接并列）
+      detail_level: 简要
+
+  # ========== 二、数据 ==========
+  数据:
+    - name: value
+      description: 数值（须含单位；绝对量与占比分别记录）
+      detail_level: 简要
+    - name: yoy_change
+      description: 同比/环比变化（正负号 + 百分点变化同时给出）
+      detail_level: 简要
+    - name: time_series
+      description: 时间序列（2024 至今逐年/逐季；无完整序列时列已知数据点并标注缺口）
+      detail_level: 详细
+    - name: net_change_abs
+      description: 净变动绝对量——由占比与总量反算（本调研核心动作：区分"分子增长"与"分母萎缩"）
+      detail_level: 详细
+    - name: distribution_metric
+      description: 分布指标——分位数/份额/五等份倍数/中位数与平均数之比（用于替代均值，避免分化被均值掩盖）
+      detail_level: 详细
+
+  # ========== 三、方法论 ==========
+  方法论:
+    - name: method_note
+      description: 测算方法说明（机构如何得出该数字；不接受仅引用结论）
+      detail_level: 详细
+    - name: known_limits
+      description: 已知局限（样本范围、剔除项、季节性处理、是否含经销商库存等）
+      detail_level: 详细
+    - name: counterfactual_baseline
+      description: 反事实基线——存在"无政策情形"测算时标注（如 300 万辆政策增量），用于区分政策周期与收入分化两种解释
+      detail_level: 详细
+
+  # ========== 四、交叉验证 ==========
+  交叉验证:
+    - name: cross_source
+      description: 对照来源（同一指标的第二、第三个独立来源）
+      detail_level: 简要
+    - name: divergence_point
+      description: 分歧点说明（不同来源数值差异及其成因；无分歧亦须标注"已交叉验证一致"）
+      detail_level: 详细
+    - name: verification_status
+      description: 核验状态（✅ 多源一致 / ⚠️ 单源或存在分歧 / ❌ 未能获取）
+      detail_level: 简要
+
+  # ========== 五、支付能力判别层（本调研核心，Q1A+Q2B 专项） ==========
+  支付能力判别:
+    - name: capacity_vs_willingness
+      description: 支付能力 vs 支付意愿拆分——如"超 60% 潜在用户推迟购车"属意愿，收入增速属能力；二者政策含义完全不同，不得混用
+      detail_level: 详细
+    - name: leverage_ratio
+      description: 杠杆化程度——贷款期限、首付比例、月供/收入比。用于辨别"能力下降被 7 年贷/0 首付掩盖"
+      detail_level: 详细
+    - name: regressivity_coef
+      description: 政策累退性系数——单档"补贴金额/车价"比值，逐档计算并与收入分组对应，把累退性变为可计算数字
+      detail_level: 详细
+    - name: tradeup_chain
+      description: 置换链条追溯——换购来源品牌与价格带（判断"高价车上升"是新增需求还是存量转移）
+      detail_level: 详细
+    - name: city_tier_split
+      description: 城市线级/城乡分解——一线/新一线/三四线/县域销量与价格带；农村每百户汽车拥有量
+      detail_level: 详细
+    - name: employment_form
+      description: 就业形态标签——灵活就业占比与购车行为的关联（衔接作者"灵活就业=劳动保障退出"域）
+      detail_level: 详细
+
+  # ========== 六、写作可用性 ==========
+  写作可用性:
+    - name: citable_number
+      description: 可直接进文章的数字（含必要口径限定词，写成可直接引用的句子片段）
+      detail_level: 简要
+    - name: writable_judgment
+      description: 可写判断（该证据支持什么结论，一句话）
+      detail_level: 简要
+    - name: redline_note
+      description: 红线提示（该数字是否易被误用；如把"均价回升"直接等同于"整体富裕"）
+      detail_level: 简要
+
+  # ========== 七、作者观点对齐（Q2B 新增） ==========
+  作者观点对齐:
+    - name: criterion_map
+      description: 判据映射——标注该证据对应哪条判据（总量守恒检验 / 先验指标vs后验指标 / 分子分母拆解 / 政策累退性检验）
+      detail_level: 简要
+    - name: domain_link
+      description: 域衔接——对应《宏观数据的阶级分析》域 或 《社保与劳动制度批判》域（notebook/）
+      detail_level: 简要
+    - name: notebook_hook
+      description: 可挂接的既有观点小节（指出该证据能否挂到 notebook 已沉淀小节上，如"车市价格带断裂""灵活就业是劳动保障的退出"）
+      detail_level: 简要
+    - name: voice_hook
+      description: 作者原声/金句挂接点——本轮已沉淀的可用金句（"冬天来了要提前准备棉衣"等），标注该证据可否支撑某句作者语言
+      detail_level: 简要
+
+# 不确定字段（deep 阶段自动填充，此处先登记缺口）
+uncertain:
+  - 分价格带 2024/2025 逐季完整序列（公开报道仅 2026Q1 + 2026H1 + 2025 全年份额）
+  - 按收入分组或五等份分组的购车率/汽车拥有率官方数据（判断为不存在，需自建"收入分组×价格带"矩阵并标注为测算）
+  - 金融杠杆化原始口径（7 年贷/0 首付的渗透率与月供收入比，需从汽金公司年报或银保监数据补）
+  - 政策累退性系数（无现成测算，需按 C1 分档表自建）
+  - 灵活就业者购车率（无官方交叉统计，可能需完全放弃或作定性处理）
+  - 出口口径冲突的官方调和说明（中汽协与乘联差异 81 万辆是否有机理解释）
+
+# 输出规范
+output_spec:
+  per_item_file: results/item_{id}.yaml
+  required_sections: [基本信息, 数据, 方法论, 交叉验证, 支付能力判别, 写作可用性, 作者观点对齐]
+  missing_data_policy: 未能获取的字段填 "❌ 未获取" 并说明已尝试的检索路径，不得留空、不得用估算值填充

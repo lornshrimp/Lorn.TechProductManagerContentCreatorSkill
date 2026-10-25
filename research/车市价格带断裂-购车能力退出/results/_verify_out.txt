@@ -1,0 +1,40 @@
+fields.yaml section与叶子字段数: {'基本信息': 7, '数据': 5, '方法论': 3, '交叉验证': 3, '支付能力判别': 6, '写作可用性': 3, '作者观点对齐': 4}
+------------------------------------------------------------
+[通过] item_E1.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 7项
+[通过] item_E2.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 7项
+[通过] item_E3.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 7项
+[通过] item_E4.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 9项
+[通过] item_E7.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 10项
+[通过] item_C1.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 5项
+[通过] item_C2.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 6项
+[通过] item_C3.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 7项
+[通过] item_B5.json
+   缺section: 无
+   缺叶子字段: 无
+   uncertain: 有, 6项
+------------------------------------------------------------
+全部通过

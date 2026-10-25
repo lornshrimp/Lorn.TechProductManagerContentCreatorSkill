@@ -1,0 +1,5 @@
+OUT=D:\Users\lorns\OneDrive\第二职业\产品经理独孤虾\互联网产品经理自媒体\research\车市价格带断裂-购车能力退出\report.md
+ITEMS=32
+VERIFY_OK=24 WARN=8 BAD=0
+SKIP_FIELDS=18 NOT_FETCHED_ITEMS=63
+PROBLEMS=0

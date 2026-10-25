@@ -1,0 +1,87 @@
+def main():
+    parser = argparse.ArgumentParser(description="自媒体流水线产出物规范校验")
+    parser.add_argument("--date", default="", help="日期 YYYY-MM-DD，缺省用今天")
+    parser.add_argument("--root", default="", help="工作区根目录，缺省自动探测项目根")
+    args = parser.parse_args()
+
+    root = Path(args.root) if args.root else find_project_root()
+    date = args.date or __import__("datetime").date.today().isoformat()
+
+    report = []
+    total_issues = 0
+
+    # ---------- 1. 榜单与选题卡 ----------
+    hotspot_dir = root / "hotspot" / "榜单" / date
+    if hotspot_dir.exists():
+        for f in sorted(hotspot_dir.glob("*.md")):
+            name = f.name
+            if name == "融合榜单.md":
+                # 融合榜单 frontmatter 用 sources 列表（多行 "  - 来源名"），无单数 source 字段。
+                # 2026-08-08 修复：parse_yaml_frontmatter 不支持 YAML 列表（"sources:" 后多行 "- " 被跳过），
+                # 改为文本级校验 sources 列表，避免误报。
+                issues = []
+                text = f.read_text(encoding="utf-8", errors="ignore")
+                fm, _ = parse_yaml_frontmatter(text)
+                for key in ["title", "date", "collectTime"]:
+                    if key not in fm or not fm[key]:
+                        issues.append(f"  ❌ frontmatter 缺少必填字段: {key}")
+                if not re.search(r"^sources:", text, re.MULTILINE) or not re.search(r"^  - ", text, re.MULTILINE):
+                    issues.append("  ❌ YAML sources 列表为空（应含 'sources:' 及多行 '  - 来源名'）")
+                issues += check_section(f, ["打卡表"], "19 源逐源状态")
+                issues += check_section(f, ["TOP 20"], "跨平台热点表")
+            else:
+                issues = check_yaml_required(f, REQUIRED_YAML_KEYS["hotspot/榜单"])
+                # 知乎类榜单必须含链接列
+                if "知乎" in name and "想法热榜" not in name and "想法话题" not in name:
+                    text = f.read_text(encoding="utf-8", errors="ignore")
+                    if "去回答" not in text and "zhihu.com/question" not in text:
+                        issues.append("  ❌ 知乎类榜单必须含「链接」列 [去回答](zhihu.com/question/...)")
+            if issues:
+                report.append(f"\n[榜单] {hotspot_dir.name}/{name}")
+                report += issues
+                total_issues += len(issues)
+
+    topic_dir = root / "hotspot" / "选题"
+    if topic_dir.exists():
+        for f in sorted(topic_dir.glob(f"{date}-选题卡.md")):
+            issues = check_yaml_required(f, REQUIRED_YAML_KEYS["hotspot/选题"])
+            issues += check_section(f, ["评分总览"], "选题评分表")
+            # 历史选题撞车检测门禁（deai-topic Step 2.5，2026-09-01 生效）：
+            # 每个推荐选题详析（### 选题X）的基本盘必须含「历史去重检测」行。
+            # 仅对生效日及之后的选题卡强制；同日选题卡缺行即 ❌（回补后再跑）。
+            if date >= TOPIC_DEDUP_EFFECTIVE_DATE:
+                text = f.read_text(encoding="utf-8", errors="ignore")
+                n_topics = len(re.findall(r"^###\s+选题[一二三四五六七八九十百]", text, re.MULTILINE))
+                n_dedup = text.count("历史去重检测")
+                if n_topics and n_dedup < n_topics:
+                    issues.append(
+                        f"  ❌ 选题详析须逐题标注「历史去重检测」（deai-topic Step 2.5 硬门禁："
+                        f"{n_topics} 个推荐选题详析仅 {n_dedup} 处标注，🔴撞车剔除/🟡深化/🟢扩展+差异化增量）"
+                    )
+            if issues:
+                report.append(f"\n[选题卡] {f.name}")
+                report += issues
+                total_issues += len(issues)
+
+    # ---------- 2. 研究报告 ----------
+    research_dir = root / "research"
+    if research_dir.exists():
+        for d in sorted(research_dir.iterdir()):
+            if d.is_dir():
+                for f in sorted(d.glob("研究报告.md")):
+                    issues = check_yaml_required(f, REQUIRED_YAML_KEYS["research"])
+                    if issues:
+                        report.append(f"\n[研究报告] {d.name}/研究报告.md")
+                        report += issues
+                        total_issues += len(issues)
+
+    # ---------- 3. drafts 各选题目录 ----------
+    # 目录结构（2026-08-12 起）：drafts/{日期}/{选题名}/；兼容历史遗留的 drafts/{选题名}/ 顶层目录。
+    drafts_dir = root / "drafts"
+    if drafts_dir.exists():
+        topic_dirs = []
+        for d in sorted(drafts_dir.iterdir()):
+            if not d.is_dir():
+                continue
+            # 日期格式目录（YYYY-MM-DD）→ 其子目录为选题目录
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}"

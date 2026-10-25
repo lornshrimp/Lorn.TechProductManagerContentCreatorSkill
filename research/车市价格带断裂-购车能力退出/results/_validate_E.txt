@@ -1,0 +1,44 @@
+字段定义文件: D:\Users\lorns\OneDrive\第二职业\产品经理独孤虾\互联网产品经理自媒体\research\车市价格带断裂-购车能力退出\fields.yaml
+总字段数: 0 (必填: 0, 可选: 0)
+
+============================================================
+[通过] item_E1.json
+============================================================
+覆盖率: 100.0% (0/0)
+
+[信息] 额外字段 (17):
+  band_definition, breaks_flag, group, id, indicator_name, priority, publish_date, series_completeness, source_org, statistical_caliber
+  ... 还有 7 个
+
+============================================================
+[通过] item_E2.json
+============================================================
+覆盖率: 100.0% (0/0)
+
+[信息] 额外字段 (17):
+  band_definition, breaks_flag, group, id, indicator_name, priority, publish_date, series_completeness, source_org, statistical_caliber
+  ... 还有 7 个
+
+============================================================
+[通过] item_E3.json
+============================================================
+覆盖率: 100.0% (0/0)
+
+[信息] 额外字段 (17):
+  band_definition, breaks_flag, group, id, indicator_name, priority, publish_date, series_completeness, source_org, statistical_caliber
+  ... 还有 7 个
+
+============================================================
+[通过] item_E4.json
+============================================================
+覆盖率: 100.0% (0/0)
+
+[信息] 额外字段 (17):
+  band_definition, breaks_flag, group, id, indicator_name, priority, publish_date, series_completeness, source_org, statistical_caliber
+  ... 还有 7 个
+
+============================================================
+汇总
+============================================================
+验证通过: 4/4
+平均覆盖率: 100.0%

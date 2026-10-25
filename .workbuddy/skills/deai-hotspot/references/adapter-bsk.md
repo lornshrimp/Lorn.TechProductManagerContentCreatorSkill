@@ -37,9 +37,14 @@ bsk session stop <id>                  # 任务结束必停（含出错路径）
 ### 知乎热榜（登录态，此前所有通道不可达）
 ```bash
 bsk navigate --session <id> --wait-until load "https://www.zhihu.com/hot"
-bsk snapshot --session <id> | grep -E 'link "'           # 问题标题
-bsk snapshot --session <id> | grep '热度'                  # 热度值
+# ✅ 推荐：条目内对齐提取（rank##热度##标题##链接 四元组，单条 evaluate 一次拿全）
+bsk evaluate --session <id> "Array.from(document.querySelectorAll('.HotItem')).slice(0,25).map(el=>{const r=el.querySelector('.HotItem-rank');const m=el.querySelector('.HotItem-metrics');const a=el.querySelector('a[href*=\\\"/question/\\\"]');const t=a?(a.innerText||'').trim().split('\\n')[0]:'';const h=a?a.getAttribute('href'):'';return (r?r.innerText.trim():'?')+'##'+(m?m.innerText.trim().split('\\n')[0]:'?')+'##'+t+'##'+h}).join('\\n')"
+# 注：.HotItem-name 内无 a 元素（标题直选器失效，历史复现）；取条目内第一个 question 链接 + a 文本首行为标题
+# ❌ 禁止：先 evaluate 只取文本、后手工拼接链接——2026-09-07 因此产生标题-链接系统性错位（25 条复用 3 个链接，实际为整体错位），文件被用户打回重采
+# ✅ 落盘前用 document.title 抽查/全量核验（navigate 每个 question + evaluate document.title 比对标题）
+bsk snapshot --session <id> | grep -E 'link "'           # 问题标题（旧法，仅文本无链接，慎用）
 ```
+> **2026-09-07 教训（最高优先级）**：知乎热榜采集 = 排名/热度/标题/链接 **四元组必须在同一次 evaluate 内、从同一 .HotItem 条目取出**，落盘前逐条 document.title 核验；**禁止"先提榜单文本，事后凭印象配链接"**——错位文件比缺失更危险（点击跳转错误、选题引用失真）。
 
 ### 微博热搜（需登录）
 ```bash
@@ -74,7 +79,7 @@ bsk evaluate --session <id> "Array.from(document.querySelectorAll('a')).map(a=>a
 - 虎嗅 `huxiu.com`：`bsk navigate` 后 `evaluate "document.body.innerText..."` 提取实时热文（含字节 AI 战略/梁文锋等）。urllib 直连会 WAF 拦截，但 bsk 正常。
 - InfoQ `infoq.cn/hotlist?tag=day`：JS 渲染 + 懒加载，navigate 后**先 `window.scrollTo(0, document.body.scrollHeight)` 滚动触发**，再 evaluate 提取正文。urllib 直连返回空，bsk 正常。
 - 品玩 `pingwest.com`：JS 渲染，navigate + 滚动后 evaluate 提取 `a[href*='pingwest.com/a/']` 链接与标题。urllib 直连返回空，bsk 正常。
-- 知微 `ef.zhiweidata.com`：navigate 50s 内可加载完成（无需登录），evaluate 提取事件榜/近期走势/热议事件/影响力指数；热搜榜需依次点击 6 个平台标签。历史"渲染慢易超时"记录已过时。
+- 知微 `ef.zhiweidata.com/library`（⚠️ **2026-09-09 地址更新**：事件库入口从 `#!/eventlist` SPA 改为 `/library`，旧地址与首页在 bsk 下渲染空）：navigate ~10s 即 `ready=complete`（无需登录），`evaluate document.body.innerText` 直接提取事件列表（每条含 事件名+日期+影响力指数+分类+描述），顶栏分类筛选可用；热搜榜需在首页依次点击 6 个平台标签（见 adapter-zhiwei.md）。
 - IT之家/澎湃/网易：SSR 源用 Python urllib 直采更快（澎湃/网易对 Agent Window 有 WAF/超时，bsk 可能 403/502）。
 
 ## 4. 反爬绕过经验（2026-08-07 验证，2026-08-08 补充）
@@ -87,8 +92,9 @@ bsk evaluate --session <id> "Array.from(document.querySelectorAll('a')).map(a=>a
 | 澎湃/网易 | WAF（403/502） | bsk 不可行 → urllib 直采/WebSearch |
 | 头条 | 热榜页 404（改版下线） | 降级：搜索词 + 热门文章 |
 | 虎嗅/InfoQ/品玩 | urllib 直连返回空（WAF/JS 渲染/懒加载） | **bsk 可正常采集**（见 §3 各源命令）：虎嗅 evaluate 提取；InfoQ/品玩 滚动+evaluate（2026-08-08 实测 ✅）；WebSearch 仅作最后兜底 |
-| 知微 | 历史记录"渲染慢易超时" | **bsk navigate 50s 内可加载**（无需登录），evaluate 提取事件榜/影响力指数（2026-08-08 实测 ✅） |
-| 知乎推荐/邀请问题 | 需登录，创作中心页 | bsk 登录态 navigate + evaluate 提取（2026-08-08 实测 ✅） |
+| 知微 | 旧 `#!/eventlist` SPA 渲染空 + 首页空（09-07/09-08 连败） | **入口已更新为 `https://ef.zhiweidata.com/library`**（2026-09-09 用户确认+实测 ✅）：navigate ~10s `ready=complete`，innerText 直取事件列表（事件名+日期+影响力指数） |
+| 知乎推荐问题 | 需登录，创作中心页 | **URL 必须用** `https://www.zhihu.com/creator/featured-question/recommend`（bsk 登录态 navigate + evaluate 提取，2026-08-08 实测 ✅） |
+| 知乎邀请问题 | 需登录，创作中心页 | **URL 必须用** `https://www.zhihu.com/creator/featured-question/invited`（⚠️ 2026-09-07 曾误用 `/creator/creative-inspiration/...` 前缀致 404 误判"下线"；adapter-zhihu-invited.md 中 URL 原本正确，执行时按手册走，勿凭记忆换前缀） |
 
 通用提取技巧：
 - snapshot 是 aria 文本，`grep -E 'link "'` 提取条目；热度通常为相邻 StaticText。

@@ -1,0 +1,68 @@
+SID=nwmq
+=== URL1 ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+tab=1749546236 reached=load
+url=https://www.zhihu.com/creator/featured-question/recommend
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waited_ms=5000
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+https://www.zhihu.com/creator/featured-question/recommend
+=== TITLE1 ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+问题推荐 - 创作中心 - 知乎
+=== EVAL RECOMMEND ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+新问于东来称胖东来再招员工都是学员性质，合同四年不续签，努力为社会培养更多优秀人才，如何解读这种用工逻辑？##https://www.zhihu.com/question/2082486057405362877
+为什么大模型还没有大面积应用到因子挖掘？##https://www.zhihu.com/question/2073727130379051737
+苹果现在才做折叠屏，是来得太晚，还是正好等到了技术成熟？##https://www.zhihu.com/question/2076754620832135160
+新问付航脱口秀黄牛票无法实名入场，警方通报 3 人被采取刑事强制措施，3 人被行政处罚，哪些信息值得关注？##https://www.zhihu.com/question/2082575744471757870
+Anthropic一研究员辞职示警称AI可能在未来十年内毁灭人类，巨头拿人类生命作赌，如何看待该观点？##https://www.zhihu.com/question/2081735347436778562
+飙升怎么看待美国太空军发现中国遥感五十02卫星掉出43块碎片？##https://www.zhihu.com/question/2082255427853727626
+如何看待林俊旸和他所带领开发的 Qwen 系列模型对行业的贡献？##https://www.zhihu.com/question/2012928663889338822
+飙升为什么吉利销量越来越差，只能靠便宜车走量呢？##https://www.zhihu.com/question/2071157783571986421
+AI对制造业的影响预计何时显现？##https://www.zhihu.com/question/2019843435763353551
+iPhone Duo会大幅打压华为Mate XT2的销量吗？##https://www.zhihu.com/question/2082200032460251172
+飙升从星宇批量解雇应届生到瑞浦兰钧致员工崩溃裸奔，为什么这些企业非要把人逼到崩溃才知道“悔改”？##https://www.zhihu.com/question/2081481230709519943
+大模型开源会不会变成给闭源做嫁衣?##https://www.zhihu.com/question/2031353959949006659
+飙升为什么体制内至今仍不鼓励用人工智能？##https://www.zhihu.com/question/2042649810709239000
+与AI进行对话时，礼貌性地说“请、麻烦、谢谢……”对交流有好处吗？##https://www.zhihu.com/question/1969653840065332479
+iPhone18Pro系列全球售价对比，256G国行9999元，美国仅8000元，为什么有这么大差别？##https://www.zhihu.com/question/2081416860436898604
+维密一员工称请假陪患癌母亲做手术遭拒，提出辞职领导却马上批准，如何看待此事？遇到公司拒假该怎么办？##https://www.zhihu.com/question/2081103869552211650
+苹果多款老机型涨价，iPhone 17 涨价 800 元，为什么新机发布，旧款不降价反而涨价？##https://www.zhihu.com/question/2081313765153420462
+赛力斯中报巨亏，问界 M6 走量预期落空，如何评价华为智选车模式？##https://www.zhihu.com/question/2074228962302093110
+宇树科技发布视频称，首次实现人形机器人全自主搏击，这一进展意味着什么？##https://www.zhihu.com/question/2080385733144076759
+多款手机集体涨价，陷入越涨越卖不动僵局，厂商如何打破这一困局？这股「涨价潮」短期内会退潮吗？##https://www.zhihu.com/question/2078384958259685155
+=== URL2 ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+tab=1749546236 reached=load
+url=https://www.zhihu.com/creator/featured-question/invited
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waited_ms=5000
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+https://www.zhihu.com/creator/featured-question/invited
+=== TITLE2 ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+问题推荐 - 创作中心 - 知乎
+=== EVAL INVITED ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+浙江太乙圣莲拟 30 亿元入主哪吒汽车，将如何影响其未来战略布局？##https://www.zhihu.com/question/2081827882993823882
+Anthropic 掌门人呼吁放缓 AI 模型迭代，马斯克、奥尔特曼响应，此举背后出于哪些考量？##https://www.zhihu.com/question/2082326195320918583
+飙升折叠屏是真需求还是伪需求？##https://www.zhihu.com/question/2081303760563975692
+怎么看印尼向中国贷款建高铁的钱，还款时间由40年延长到80年到下个世纪？##https://www.zhihu.com/question/2082241250988648167
+新问如何看待Anthropic、马斯克等顶级 AI 公司呼吁控制前沿 AI 发展节奏？为啥在此时喊减速？##https://www.zhihu.com/question/2082571703062721521
+劳动法落实不到位，是因为条件不成熟还是其他原因？##https://www.zhihu.com/question/2076884002825421578
+飙升机构称iPhone Duo首年有望拿下25%市场份额，晚了三星、华为数年入局折叠屏，苹果能改写格局吗？##https://www.zhihu.com/question/2081335946977469507
+是什么原因让胖东来独一家，而别的公司学不来？##https://www.zhihu.com/question/633102328
+新问AI三大巨头联手叫缓人工智能发展，这是技术奇点，还是市场缺钱，如何展望AI经济后市？##https://www.zhihu.com/question/2082500890263557361
+陶哲轩、邓煜等菲奖得主联合抗议 AI 公司数学军备竞赛，AI 是否在毁掉数学？##https://www.zhihu.com/question/2082035913132193247
+特斯拉无稀土电机 10 秒一台，每台省 1000 美元，其技术原理是什么？将如何影响电动车行业？##https://www.zhihu.com/question/2081338019919967553
+如何评价黄文政博士9月1日提出的全民起点收入概念和意义？##https://www.zhihu.com/question/2078170323778905700
+美国 8 月 CPI 同比增长 3.4%，市场预期到年底前美联储将加息两次，如何解读？##https://www.zhihu.com/question/2081457838543597642
+如何看待25位菲奖得主发布联合声明《AI在数学领域的严重错位》？是否意味着传统数学研究模式的崩溃？##https://www.zhihu.com/question/2082049593588634390
+飙升如何看待美国情报机构联合发布报告称DeepSeek、月之暗面等中国6家AI公司涉嫌「蒸馏」？##https://www.zhihu.com/question/2081096508506648911
+金税四期之下，税务工作者何去何从？##https://www.zhihu.com/question/2077331834434860188
+一个企业如果完全遵守劳动法，会不会因为人力成本太高而倒闭？##https://www.zhihu.com/question/2058360156354884634
+飙升比亚迪被曝「取消年终奖和 13 薪」，这一举动将对员工士气及公司发展带来哪些影响？##https://www.zhihu.com/question/2081785930038371559
+长城汽车 2026 年上半年净利润骤降近六成，是什么原因导致的？##https://www.zhihu.com/question/2060421321046205380
+如果竞对雇人给豆包、DeepSeek 批量喂你的差评，品牌该怎么办？##https://www.zhihu.com/question/2079216017570644108
+=== DONE ===

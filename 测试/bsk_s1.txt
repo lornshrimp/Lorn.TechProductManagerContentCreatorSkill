@@ -1,0 +1,8 @@
+{
+  "agent_window_id": 1749546219,
+  "browser_instance_id": "90d77231",
+  "session_id": "nmrz"
+}
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+SESSION  BROWSER   AGENT WINDOW
+nmrz     90d77231  1749546219

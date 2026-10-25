@@ -60,3 +60,32 @@ return await page.evaluate(() => {
 - 邀请问题是平台邀请当前用户回答的问题，**非热榜排名**，但可反映平台当前讨论方向
 - a11y 快照仅显示导航侧栏，主内容需使用 Playwright DOM 提取
 - 页面会混合展示"邀请回答"和"推荐问题"两个标签页的内容
+
+## bsk 实测命令（2026-09-07 验证，优先使用）
+
+```bash
+bsk navigate --session <id> --wait-until load "https://www.zhihu.com/creator/featured-question/invited"
+# 标题##链接 成对提取（同次 evaluate 内对齐，禁止手工拼链接）
+bsk evaluate --session <id> "Array.from(document.querySelectorAll('a[href*=\\\"/question/\\\"]')).map(a=>(a.innerText||'').trim()+'##'+a.getAttribute('href')).filter(x=>x.split('##')[0].length>8).slice(0,20).join('\\n')"
+```
+
+## 落盘硬约束（规范校验门禁）
+
+`hotspot/榜单/{日期}/知乎邀请问题.md` 必须含「链接」列（正文出现 `去回答` 或 `zhihu.com/question`），
+否则 `规范校验.py` 判 ❌（规则：文件名含"知乎"且非"想法热榜/想法话题"即强制）。
+**采集时就必须落链接，不要只存标题。**
+
+## 断链补采流程（2026-09-14 实测，晨间采集漏链时用）
+
+1. **feed 会轮换**：单轮 evaluate 通常只命中当日榜单的约 2/3，**至少 3 轮**（每轮 `navigate → wait-ms 4500 → evaluate`），取并集。
+2. **余量走搜索页**（同 recommend 适配器）：
+   ```bash
+   bsk navigate --session <id> --wait-until load "https://www.zhihu.com/search?type=content&q=<urlencode(标题)>"
+   bsk wait-ms 4000
+   bsk evaluate --session <id> "Array.from(document.querySelectorAll('a[href*=\"/question/\"]')).map(a=>(a.innerText||'').trim()+'##'+a.getAttribute('href')).filter(x=>x.split('##')[0].length>4).slice(0,20).join('\n')"
+   ```
+   从返回结果里挑**标题逐字一致**的那条的 `/question/{id}`。
+3. **核验**：补完后抽查 ≥5 条 `bsk navigate https://www.zhihu.com/question/{id}` + `evaluate "document.title"`，确认标题与榜单行一致。**禁止凭记忆拼 question id。**
+4. 补齐后 `bsk session stop --all`。
+
+> ⚠️ **前缀警告（2026-09-07 事故）**：**必须使用本文件第 4 行 URL 的 `/creator/featured-question/` 前缀**。曾因误用 `/creator/creative-inspiration/invited` 得到 404，被误判"页面已改版下线"——页面从未下线，是执行时换错了前缀。page 标题为「问题推荐 - 创作中心」，含板块分组（新问/「XX领域」今日热议/知乎热榜上榜/话题推荐），可按板块组织输出。

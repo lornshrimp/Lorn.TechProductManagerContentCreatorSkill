@@ -1,0 +1,17 @@
+FINAL=3126
+知乎: 2861 ratio=91.5% sim_final=38.5%
+微信: 2728 ratio=87.3% sim_final=45.4%
+百家号: 2378 ratio=76.1% sim_final=41.2%
+CSDN: 2460 ratio=78.7% sim_final=34.0%
+头条: 2214 ratio=70.8% sim_final=49.4%
+--- pairwise ---
+知乎x微信: 47.9%
+知乎x百家号: 39.8%
+知乎xCSDN: 34.0%
+知乎x头条: 42.6%
+微信x百家号: 45.7%
+微信xCSDN: 36.4%
+微信x头条: 57.0%
+百家号xCSDN: 40.0%
+百家号x头条: 51.5%
+CSDNx头条: 40.0%

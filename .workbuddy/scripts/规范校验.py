@@ -88,6 +88,32 @@ TITLE_CHECKS = {
     "平台适配": "必须含「平台适配」章节（各平台首选标题）",
 }
 
+# ============================================================
+# 产品经理方法论门禁（2026-10-20 新增，用户确认「只对 --date 当日生效」）
+#
+# 背景：作者要求「拆解/分析/成文」必须体现 20 年资深产品经理的能力与方法论。
+# 规则源：.workbuddy/skills/deai-research/references/产品经理拆解工具箱.md
+#        + deai-research「四、产品经理拆解板」+ deai-outline「产品拆解映射」。
+#
+# 生效范围（关键设计）：仅当产出的 frontmatter date / 所在日期目录 == --date 指定日期
+# 时才检查。历史 200+ 目录不回溯，避免全库集体误报，也让每次运行只付当日成本。
+# ============================================================
+# 研究报告·PM 拆解板：depth 分级必填小节（关键词匹配，不含序号，容忍「4.1」「二（补）」等编号差异）
+PM_BOARD_SECTIONS_FULL = [
+    "方法论骨架", "五问定位",
+    "交付物一", "交付物二", "交付物三", "交付物四",
+    "术语预算",
+]
+# L2 简版：只填 Q1/Q3/Q4 + 交付物一/二（见 SKILL「本节必填，L3/L4 全填 / L2 填 Q1/Q3/Q4+交付物一/二」）
+PM_BOARD_SECTIONS_L2 = ["五问定位", "交付物一", "交付物二"]
+PM_FIVE_Q_REQUIRED_L2 = ["Q1", "Q3", "Q4"]
+# L1 豁免：浅度研究（快讯/清单体）不承担方法论拆解，只保事实
+PM_BOARD_EXEMPT_DEPTHS = {"L1"}
+# 大纲·产品拆解映射：四件交付物 + 主/辅框架须逐项落位到段落
+PM_MAPPING_ROWS = ["交付物一", "交付物二", "交付物三", "交付物四", "主框架", "辅助框架"]
+# 模板占位符（{...}）残留检测：骨架直接复制未替换 = 未真实填写
+PM_PLACEHOLDER_RE = re.compile(r"\{[^{}\n]{1,40}\}")
+
 # 标题方案：候选池数量底线（2026-08-16 新增，对齐 skill Step 3 "12-18 个"）
 TITLE_CANDIDATE_MIN = 12
 TITLE_CANDIDATE_MIN_BREAKING_NEWS = 8   # 快讯评点体候选空间小，豁免底线
@@ -304,6 +330,36 @@ def check_anchor_quality(path: Path) -> list:
         # 指令区同步检查
         if f"「{a}」" not in c:
             issues.append(f"  ❌ 配图搜索替换指令缺锚: 「{a}」未出现在配图搜索替换指令区")
+    return issues
+
+
+# ============================================================
+# 配图数量同质化提醒（2026-09-13 新增，作者复核教训固化）
+# 背景：作者指出 09-11~09-13 连续三日"每篇稿、每个平台均为 1 张配图"，已成默认惯性——
+# 而各 adapt 技能的配图档位是按正文长度分档的（2500-3500 字 → 2-3 张含封面；
+# 3500 字以上 → 3-4 张），5 个平台正文字数又各不相同。若同话题下各平台配图张数
+# 完全一致，多半是套用了固定值，而非逐平台按内容必要性判断。
+# 设计取舍：本项只做 ⚠️ 提醒，不设数量下限硬门禁——配图张数由内容必要性决定，
+# 没有默认值（作者 2026-09-13 明确："每篇文章究竟几个配图是由必要性决定的"）。
+# 不得反过来把本项当"必须张数不同"的新规则：张数相同也可能是各平台恰好都只有
+# 一处该配——本项只要求人工/生成方回看取点依据，不做数量管控。
+# ============================================================
+def check_figure_count_uniformity(platform_files: list) -> list:
+    """同话题平台稿配图张数同质化提醒（⚠️ 级，不阻断放行）。"""
+    issues = []
+    counts = {}
+    for pf in platform_files:
+        t = pf.read_text(encoding="utf-8", errors="ignore")
+        n = len(set(re.findall(r"\[配图\s*(\d+)\]", t)))
+        if n > 0:
+            counts[pf.name] = n
+    if len(counts) >= 3 and len(set(counts.values())) == 1:
+        n = next(iter(counts.values()))
+        issues.append(
+            f"  ⚠️ 配图数量同质化: {len(counts)} 个平台稿全部为 {n} 张"
+            f"（{'、'.join(sorted(counts))}）——各平台正文字数与适配档位不同，"
+            f"张数完全一致多为套用固定值而非逐篇按必要性判定；"
+            f"请确认每张配图的取点依据（配图张数无默认值，不以 1 张为惯例）")
     return issues
 
 
@@ -752,6 +808,103 @@ def check_platform_title_length(path: Path) -> list:
 
 PLATFORM_TITLE_SIM = 0.85  # 平台标题两两相似度 ≥85% → 标题未差异化（2026-08-18 新增）
 
+# 平台标题标点门禁（2026-09-17 新增）
+TITLE_PUNCT_EFFECTIVE_DATE = "2026-09-14"  # 门禁生效日（该日及以后产出强制；更早历史豁免）
+TITLE_PUNCT_STRICT_LEN = 16  # ≥ 此字数且标题内零标点 → ❌（连续字串读感）
+TITLE_PUNCT_WARN_LEN = 12    # 12~15 字且零标点 → ⚠️
+TITLE_PUNCT_CHARS = "，。、：；？！…—－·《》〈〉「」『』（）〔〕【】“”‘’\"'-–~!?,:;()[]"
+TITLE_QWORD_PATTERNS = (
+    r"(吗|呢)[\s）」』”\"'）)]*$",  # 以语气助词收尾 = 疑问句
+    r"^(为什么|怎么|如何|为何|凭什么|难道|谁能|什么是)",  # 疑问词开头
+    # 疑问短语收尾（锚定句末，避免"运河省下的运费归谁，不妨先算三笔账"这类
+    # 疑问词出现在前一分句、整体却是陈述句的误报）
+    r"(是什么|怎么办|怎么算|怎么念|怎么读|怎么选|怎么分|归谁|给谁|是谁|去哪|在哪"
+    r"|哪里|哪些|多少|多久|多大|为什么|何时|有没有|了没)[\s）」』”\"'）)]*$",
+)
+
+
+def check_platform_title_punctuation(path: Path) -> list:
+    """平台标题标点门禁（2026-09-17 新增，来源：用户复核「最近几天的标题都比较奇怪」）。
+
+    背景：2026-09-14~09-17 全量体检 60 个平台稿标题——09-17 有 14/15 完全没有标点
+    （如「1050 亿美元的对面站着什么这笔账谁在付」，本是
+    「1050 亿美元的对面，站着什么？这笔账谁在付」），09-16 亦达 14/15，
+    09-15 为 3/15；读起来是两个短句粘连成的连续字串。
+
+    根因：平台适配环节把 Step 5「字数收缩规则（删虚词/换语序）」误用为「删标点」。
+    但标题字数按 `[\\u4e00-\\u9fffA-Za-z0-9]` 计，标点（含逗号、问号）根本不占额度，
+    删标点对字数毫无帮助，纯属误伤；且丢问号会让设问句失去语气。
+
+    原校验仅有「字数 / 溯源 / 差异化」三项门禁，无标点项，故该缺陷连续 4 天静默通过。
+
+    门禁规则：
+    1. 无标点长串：实测字数 ≥16 且标题内零标点 → ❌；12~15 字零标点 → ⚠️
+    2. 设问句丢问号：标题以语气助词（吗/呢）收尾、以疑问词开头、或以疑问短语
+       （是什么/怎么办/归谁/给谁/去哪/多少…）收尾，却无 ？ → ⚠️
+       （疑问短语必须锚定句末——疑问词出现在前一分句、整体是陈述句的不报）
+    """
+    issues = []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    m = re.search(r"^#{2,4}\s*.*平台适配.*$", text, re.MULTILINE)
+    if not m:
+        return issues  # 章节缺失由 check_section 兜底
+    start = m.end()
+    nxt = re.search(r"^##(?!#)\s+", text[start:], re.MULTILINE)
+    seg = text[start: start + nxt.start()] if nxt else text[start:]
+    lines = [ln.strip() for ln in seg.split("\n") if ln.strip()]
+    col_is_title = [False, False, False]
+    for ln in lines:
+        if not ln.startswith("|") or re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) >= 2 and cells[0] in ("平台", "序号", "排名", "平台名称"):
+            for idx, h in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+                if h in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                    col_is_title[idx] = True
+            break
+    if not any(col_is_title):
+        col_is_title[1] = True
+    for ln in lines:
+        if not ln.startswith("|") or re.fullmatch(r"\|[\s:\-|]+\|", ln):
+            continue
+        cells = [c.strip().strip("*`").strip() for c in ln.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        platform = cells[0]
+        if platform in ("平台", "序号", "排名", "平台名称") or not platform:
+            continue
+        for idx, cell in ((1, cells[1]), (2, cells[2] if len(cells) > 2 else "")):
+            if not col_is_title[idx] or not cell:
+                continue
+            if cell in ("首选标题", "备选标题", "标题", "推荐标题", "首选", "备选"):
+                continue
+            t_clean = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", cell)
+            t_clean = t_clean.strip().strip("*`\"'“”‘’「」『』").strip()
+            if not t_clean or re.match(r"^#?\d+\s*$", t_clean):
+                continue  # #N 编号引用不是实际标题
+            if t_clean in ("（同微信标题）", "同微信标题", "同头条标题"):
+                continue
+            n = len(re.findall(r"[\u4e00-\u9fffA-Za-z0-9]", t_clean))
+            has_punct = any(ch in TITLE_PUNCT_CHARS for ch in t_clean)
+            if not has_punct and n >= TITLE_PUNCT_STRICT_LEN:
+                issues.append(
+                    f"  ❌ 平台标题零标点长串: {platform} 标题「{t_clean}」{n} 字且无任何标点"
+                    f"——多个短句被粘连成一个连续字串，读起来不像人说的话。"
+                    f"标题字数按 [汉字/字母/数字] 计，标点不占额度，"
+                    f"补标点既不影响字数也不会触发超限（deai-title Step 5 平台字数收缩规则"
+                    f"只允许删虚词/换语序，严禁删标点）")
+            elif not has_punct and n >= TITLE_PUNCT_WARN_LEN:
+                issues.append(
+                    f"  ⚠️ 平台标题零标点: {platform} 标题「{t_clean}」{n} 字且无任何标点"
+                    f"——建议按语义断点补逗号/顿号/冒号")
+            if not has_punct or ("？" not in t_clean and "?" not in t_clean):
+                if any(re.search(p, t_clean) for p in TITLE_QWORD_PATTERNS):
+                    issues.append(
+                        f"  ⚠️ 平台标题设问句缺问号: {platform} 标题「{t_clean}」"
+                        f"含疑问句式但无「？」——设问/追问式标题必须带问号，否则语气丢失、"
+                        f"读者读不出提问意图")
+    return issues
+
 
 def check_platform_title_diversity(platform_files: list, final_file=None) -> list:
     """平台标题差异化门禁（2026-08-18 新增，教训固化）。
@@ -866,6 +1019,31 @@ def check_content(path: Path, keywords: list, desc: str) -> list:
 QAIHUA_REPORT_EFFECTIVE = "2026-08-25"
 
 
+def check_notebook_refs(path: Path, notebook_dir: Path) -> list:
+    """观点域引用存在性门禁（2026-09-22 新增，教训固化）。
+
+    背景：2026-09-22 收尾校验通过后人工复核，发现选题卡与两份大纲引用了
+    `notebook/指标治理与口径.md` / `notebook/指标治理.md` —— 该文件**根本不存在**，
+    真实承载"口径即定义权 / 测量工具→生产任务"的是 `notebook/宏观数据的阶级分析.md`
+    与 `notebook/制度激励与资本转移.md`。脚本此前不校验引用存在性 → 静默通过，
+    等于观点底座链条断在空中（读者/作者回查时无从核对）。
+
+    门禁：文中以 `notebook/xxx.md` 形式出现的引用，若目标文件不存在 → ❌。
+    """
+    issues = []
+    if not path.exists() or not notebook_dir.exists():
+        return issues
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    refs = set(re.findall(r"notebook/([^）)】」\s`，,、。；;：:]+?\.md)", text))
+    missing = sorted({r for r in refs if not (notebook_dir / r).exists()})
+    for m in missing:
+        issues.append(
+            f"  ❌ 观点域引用不存在: `notebook/{m}` 未找到对应文件"
+            f"——观点底座必须指向真实存在的 notebook 文件，"
+            f"否则引用链断裂、作者回查无从核对（deai-topic/deai-outline 落盘前须核对文件名）")
+    return issues
+
+
 def check_qaihua_report(path: Path) -> list:
     """去AI化报告结构门禁（2026-08-25 新增）：
     报告必须为 deai-polish Output 模板的完整结构（统计对抗/修改记录/未修改项/
@@ -889,6 +1067,92 @@ def check_qaihua_report(path: Path) -> list:
                       "按 deai-polish SKILL Output 模板（统计对抗/子技能记录/修改记录/未修改项/"
                       "字数变动监控/stop-slop 评分/三条铁律）补全；结构缺失 = 未真实执行去AI化全流程"
                       "（2026-08-25 门禁，禁止用简版空壳报告代替）")
+    return issues
+
+
+def _section_body(text: str, title_kw: str, level: int = 2) -> str:
+    """取出「H{level} 标题（含 title_kw）」到下一个同级/更高级标题之间的正文。
+    用于只校验某一节内部（如 PM 拆解板），避免全文关键词命中造成的假阳性。"""
+    m = re.search(rf"^#{{{level}}}\s+[^\n]*{re.escape(title_kw)}[^\n]*$", text, re.MULTILINE)
+    if not m:
+        return ""
+    start = m.end()
+    nxt = re.search(rf"^#{{1,{level}}}\s", text[start:], re.MULTILINE)
+    return text[start:start + nxt.start()] if nxt else text[start:]
+
+
+def check_pm_board(path: Path, target_date: str) -> list:
+    """研究报告「产品经理拆解板」门禁（2026-10-20 新增，用户确认）。
+
+    规则源：deai-research SKILL「四、产品经理拆解板」+ references/产品经理拆解工具箱.md。
+    - depth L1：豁免（浅研究只保事实，不承担方法论拆解）
+    - depth L2：五问定位（Q1/Q3/Q4）+ 交付物一 + 交付物二
+    - depth L3/L4：方法论骨架 + 五问定位 + 四件交付物 + 术语预算，共七节全填
+    - 任一节残留 {占位符} → 骨架未替换为本案真实内容，判 ❌（禁止复制模板充数）
+
+    **仅 target_date 当日生效**（用户 2026-10-20 确认）：读 frontmatter date 比对，
+    历史产出不回溯——否则 200+ 历史目录会集体误报，且每次全量运行白付成本。
+    """
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    fm, _ = parse_yaml_frontmatter(text)
+    if (fm.get("date") or "").strip() != target_date:
+        return []
+    depth = (fm.get("depth") or "").strip().upper()
+    if depth in PM_BOARD_EXEMPT_DEPTHS:
+        return []
+
+    body = _section_body(text, "产品经理拆解板")
+    if not body:
+        return [
+            "  ❌ 缺少章节: 产品经理拆解板（PM Board，deai-research Step 1.7"
+            f"；depth {depth or '未标注'} 必填）——拆解须落在产品方法上："
+            "现状链条 / 度量视角 / 真实权衡 / 反方案+副作用"
+        ]
+
+    issues = []
+    required = PM_BOARD_SECTIONS_L2 if depth == "L2" else PM_BOARD_SECTIONS_FULL
+    for name in required:
+        # 容忍 H3/H4 与各种序号前缀（4.1 / 二（补）/ 无序号）
+        if not re.search(rf"^#{{3,4}}\s+[^\n]*{re.escape(name)}", body, re.MULTILINE):
+            issues.append(f"  ❌ 产品经理拆解板缺小节: {name}（depth {depth or '未标注'} 必填）")
+    if depth == "L2":
+        for q in PM_FIVE_Q_REQUIRED_L2:
+            if not re.search(rf"^\|\s*{q}\s*\|", body, re.MULTILINE):
+                issues.append(f"  ❌ 产品经理拆解板·五问定位缺 {q} 行"
+                              f"（L2 最低要求 Q1/Q3/Q4 三问有答）")
+
+    ph = PM_PLACEHOLDER_RE.findall(body)
+    if ph:
+        uniq = "、".join(sorted(set(ph))[:6])
+        issues.append(f"  ❌ 产品经理拆解板残留模板占位符 {len(ph)} 处（如 {uniq}）"
+                      f"——骨架必须替换为本案真实内容，禁止复制模板充数")
+    return issues
+
+
+def check_pm_mapping(path: Path) -> list:
+    """大纲「产品拆解映射」门禁（2026-10-20 新增，仅当日目录调用）。
+
+    规则源：deai-outline Step 1.8 + Output「一（补）、产品拆解映射」。
+    四件交付物 + 主框架 + 辅助框架必须逐项写明落位段落与具体承载，
+    否则「研究报告有拆解板、正文却没落地」——拆解板沦为摆设。
+    """
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    body = _section_body(text, "产品拆解映射")
+    if not body:
+        return [
+            "  ❌ 缺少章节: 产品拆解映射（deai-outline Step 1.8，2026-10-20 起必填）"
+            "——PM 拆解板须映射到具体段落，否则方法论进不了正文"
+        ]
+    issues = []
+    for row in PM_MAPPING_ROWS:
+        if row not in body:
+            issues.append(f"  ❌ 产品拆解映射缺行: {row}"
+                          f"（四件交付物 + 主/辅框架须逐项落位到段落）")
+    ph = PM_PLACEHOLDER_RE.findall(body)
+    if ph:
+        uniq = "、".join(sorted(set(ph))[:6])
+        issues.append(f"  ❌ 产品拆解映射残留模板占位符 {len(ph)} 处（如 {uniq}）"
+                      f"——落位段落与承载内容须写实")
     return issues
 
 
@@ -964,6 +1228,9 @@ def main():
                         f"  ❌ 选题详析须逐题标注「历史去重检测」（deai-topic Step 2.5 硬门禁："
                         f"{n_topics} 个推荐选题详析仅 {n_dedup} 处标注，🔴撞车剔除/🟡深化/🟢扩展+差异化增量）"
                     )
+            # 观点域引用存在性门禁（2026-09-22 新增，教训固化）：选题卡的作者观点库
+            # 与匹配度「作者观点储备」行同样须指向真实存在的 notebook 文件。
+            issues += check_notebook_refs(f, root / "notebook")
             if issues:
                 report.append(f"\n[选题卡] {f.name}")
                 report += issues
@@ -976,6 +1243,9 @@ def main():
             if d.is_dir():
                 for f in sorted(d.glob("研究报告.md")):
                     issues = check_yaml_required(f, REQUIRED_YAML_KEYS["research"])
+                    # 产品经理拆解板门禁（2026-10-20 新增）：函数内部按 frontmatter date
+                    # 判定「是否当日」，非当日直接返回空——历史报告不回溯。
+                    issues += check_pm_board(f, date)
                     if issues:
                         report.append(f"\n[研究报告] {d.name}/研究报告.md")
                         report += issues
@@ -1006,6 +1276,12 @@ def main():
             if outline.exists():
                 issues = check_yaml_required(outline, REQUIRED_YAML_KEYS["drafts"])
                 issues += check_section(outline, ["段落骨架", "标题策略"], "大纲必填章节")
+                # 观点域引用存在性门禁（2026-09-22 新增，教训固化）
+                issues += check_notebook_refs(outline, root / "notebook")
+                # 产品拆解映射门禁（2026-10-20 新增）：仅对 --date 当日目录生效。
+                # 历史目录不回溯——否则 200+ 旧大纲集体缺该节、报告被噪音淹没。
+                if d.parent.name == date:
+                    issues += check_pm_mapping(outline)
                 dir_issues += issues
 
             # 标题方案
@@ -1033,6 +1309,11 @@ def main():
                     issues += check_platform_title_trace(title_f)
                     # 平台标题字数合规门禁（2026-08-16 新增）：平台适配后标题须落在平台字数区间。
                     issues += check_platform_title_length(title_f)
+                    # 平台标题标点门禁（2026-09-17 新增）：禁止平台适配环节删标点产生
+                    # "零标点长串"，设问句必须带问号（用户复核「标题比较奇怪」教训固化）。
+                    # 生效日 2026-09-14：更早的历史产出豁免（避免全库回溯误报）。
+                    if _tdate >= TITLE_PUNCT_EFFECTIVE_DATE if _tdate else False:
+                        issues += check_platform_title_punctuation(title_f)
                 dir_issues += issues
 
             # 草稿 + 润色稿 + 去AI化报告
@@ -1169,6 +1450,17 @@ def main():
                         if not any(k in pf.read_text(encoding="utf-8", errors="ignore") for k in vkw):
                             issues.append(f"  ❌ 平台视觉要素缺失: {vdesc}（适配技能封面图/配图章节必产）")
 
+                # 互动引导落位门禁（2026-09-16 用户否决，教训固化）：
+                # 结尾互动引导必须融入正文成为末段，不得另起「读者互动」/「互动引导」小标题——
+                # 带标题等于把结尾从文章里割出去、降级为附属区。2026-09-16 微信版两篇把引导句放进
+                # `## 读者互动` 标题块、且整块排在 `## 视觉与配图` 之后，用户明确否决；
+                # 2026-09-15 微信/头条版则以 `## 互动引导` 复现同一问题。
+                # 注：`## 写在最后` 属正常收尾小节，不在拦截范围。
+                if re.search(r"^#{1,3}\s*(读者互动|互动引导)\s*$",
+                             pf.read_text(encoding="utf-8", errors="ignore"), re.MULTILINE):
+                    issues.append("  ❌ 互动引导另起小标题: 结尾引导句应作为正文末段直接续写，"
+                                  "不得使用「读者互动/互动引导」标题（割裂正文、把结尾降级为附属区）")
+
                 # 头条版专项：封面图 + 内容简介（头条技能 6.5 必填项，原 TOUTIAO_CHECKS 漏检）
                 if pf.name.startswith("头条-"):
                     for vkw, vdesc in TOUTIAO_VISUAL_REQUIRED:
@@ -1204,6 +1496,10 @@ def main():
             # 平台标题差异化门禁（2026-08-18 新增）：各平台稿标题须互不相同且不同于母稿标题
             dir_issues += check_platform_title_diversity(platform_files,
                                                           final_refs[0] if final_refs else None)
+
+            # 配图数量同质化提醒（2026-09-13 新增，⚠️ 级不阻断）：
+            # 同话题各平台配图张数完全一致时提示复核取点依据。
+            dir_issues += check_figure_count_uniformity(platform_files)
 
             if dir_issues:
                 report.append(dir_label)

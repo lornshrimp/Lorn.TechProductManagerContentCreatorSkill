@@ -1,0 +1,28 @@
+=== START ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waiting for browser extension to connect…
+eblp
+=== LIST ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+SESSION  BROWSER   AGENT WINDOW
+eblp     90d77231  1749546227
+C:\Users\lorns\.workbuddy\binaries\PortableGit\versions\1.2.0\bin\bash.exe: line 6: tr: command not found
+C:\Users\lorns\.workbuddy\binaries\PortableGit\versions\1.2.0\bin\bash.exe: line 6: sed: command not found
+SID=
+=== NAV ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+waited_ms=4000
+=== URL ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped
+=== EVAL ===
+A new bsk version is available: 0.1.9 -> 0.2.1. Run `bsk update`.
+error: requested resource does not exist
+hint: the session, tab, or browser may have stopped; run `bsk session list` / `bsk browsers` to see current state
+details: session not registered or already stopped

@@ -1,0 +1,1 @@
+C:\Users\lorns\.workbuddy\binaries\PortableGit\versions\1.2.0\bin\bash.exe: line 1: ls: command not found
